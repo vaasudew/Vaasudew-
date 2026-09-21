@@ -1,0 +1,6 @@
+{
+  "name": "Hari Travels",
+  "description": "Premium Tirupati–Tirumala travel platform combining cab booking, live GPS tracking, curated temple tours, and local sightseeing packages.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
