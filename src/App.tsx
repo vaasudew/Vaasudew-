@@ -1,11 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { auth } from './firebase';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { CabBooking } from './components/CabBooking';
+import { RideBookingForm } from './components/RideBookingForm';
+import { AdminLogin } from './components/AdminLogin';
+import { AdminDashboard } from './components/AdminDashboard';
 import { LiveTrackingScreen } from './components/LiveTrackingScreen';
 import { ToursSection } from './components/ToursSection';
 import { DestinationsSection } from './components/DestinationsSection';
 import { FeaturesTrust } from './components/FeaturesTrust';
+import { GovindaShlokaBanner } from './components/GovindaShlokaBanner';
 import { Footer } from './components/Footer';
 import { 
   RideBooking, 
@@ -24,6 +30,15 @@ import { Phone, MessageCircle } from 'lucide-react';
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('home');
   const [activeBooking, setActiveBooking] = useState<RideBooking | null>(INITIAL_DEMO_BOOKING);
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  
+  // Listen to Firebase Authentication state
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
   
   // Preselected parameters for cab booking
   const [preselectedPickup, setPreselectedPickup] = useState<LocationPoint | undefined>(undefined);
@@ -79,7 +94,7 @@ export default function App() {
         setActiveTab={setActiveTab}
         activeBooking={activeBooking}
         onOpenBooking={() => {
-          setActiveTab('cabs');
+          setActiveTab('ride-booking');
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
       />
@@ -100,6 +115,30 @@ export default function App() {
               }}
             />
 
+            {/* Sacred Telugu Govinda Shloka Banner */}
+            <GovindaShlokaBanner />
+
+            {/* Direct Client Ride Booking Form Banner in Home */}
+            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+              <div className="text-center mb-6">
+                <span className="text-[11px] uppercase font-bold tracking-widest text-[#8C6D28] bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
+                  Instant Ride Dispatch
+                </span>
+                <h2 className="font-display text-2xl sm:text-3xl font-bold text-[#3B0A11] mt-2">
+                  Book Your Tirupati / Tirumala Cab
+                </h2>
+                <p className="text-xs sm:text-sm text-stone-600 max-w-lg mx-auto mt-1">
+                  Saved instantly to our 24/7 dispatch database. Verified hill drivers with zero advance.
+                </p>
+              </div>
+              <RideBookingForm
+                onOpenLiveTracking={() => {
+                  setActiveTab('live-tracking');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+              />
+            </section>
+
             {/* Featured Curated Tours snippet */}
             <ToursSection onSelectTourToBook={handleSelectTourToBook} />
 
@@ -109,6 +148,48 @@ export default function App() {
             {/* Trust & Safety Pillars */}
             <FeaturesTrust />
           </>
+        )}
+
+        {/* Client-Facing Dedicated Ride Booking Form */}
+        {activeTab === 'ride-booking' && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+            <RideBookingForm
+              onOpenLiveTracking={() => {
+                setActiveTab('live-tracking');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            />
+          </div>
+        )}
+
+        {/* Admin Login & Ride Management Dashboard */}
+        {activeTab === 'admin' && (
+          <div>
+            {currentUser ? (
+              <AdminDashboard
+                currentUser={currentUser}
+                onLogout={() => {
+                  setActiveTab('home');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                onNavigateHome={() => {
+                  setActiveTab('home');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+              />
+            ) : (
+              <AdminLogin
+                onLoginSuccess={() => {
+                  setActiveTab('admin');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                onCancel={() => {
+                  setActiveTab('home');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+              />
+            )}
+          </div>
         )}
 
         {activeTab === 'cabs' && (

@@ -31,6 +31,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { createRideBooking } from '../firebase';
 import { 
   LocationPoint, 
   VehicleOption, 
@@ -47,6 +48,12 @@ import {
 } from '../data/travelData';
 import { InteractiveMap } from './InteractiveMap';
 import { useLiveLocation, isNoneLocation, isLiveLocation } from '../hooks/useLiveLocation';
+import { 
+  createGoogleMapsGpsLink, 
+  createGoogleMapsNavigateLink, 
+  resolveLocationGpsLink, 
+  resolveLocationNavigateLink 
+} from '../utils/whatsapp';
 
 interface CabBookingProps {
   onBookingConfirmed: (booking: RideBooking) => void;
@@ -163,11 +170,24 @@ export const CabBooking: React.FC<CabBookingProps> = ({
     };
     const tripName = tripTypeLabels[tripType] || 'Cab Booking';
 
+    const isLive = isLiveLocation(pickup);
+    const pickupGpsPin = (pickup.lat !== 0 && pickup.lng !== 0)
+      ? createGoogleMapsGpsLink(pickup.lat, pickup.lng)
+      : resolveLocationGpsLink(pickup.name);
+
+    const pickupNav = (pickup.lat !== 0 && pickup.lng !== 0)
+      ? createGoogleMapsNavigateLink(pickup.lat, pickup.lng)
+      : resolveLocationNavigateLink(pickup.name);
+
     const lines = [
       `Hello Hari Travels, I would like to book a cab in Tirupati / Tirumala.`,
       ``,
       `🚖 Trip Type: ${tripName}`,
       `📍 Pickup Location: ${pickup.name}`,
+      isLive ? `🟢 *Customer Live Location Active:* Customer selected real-time GPS coordinates!` : '',
+      `🧭 *DRIVER TURN-BY-TURN NAVIGATION LINK (Reach Customer):*\n${pickupNav}`,
+      `🗺️ *Live Location GPS Pin:* ${pickupGpsPin}`,
+      ``,
       `🏁 Drop Destination: ${destination.name}`,
       `🛣️ Route Distance: ${distanceKm > 0 ? `${distanceKm} km (~${Math.round(distanceKm * 2.2)} mins)` : 'To be confirmed'}`,
       `📅 Date of Journey: ${travelDate} at ${travelTime}`,
@@ -176,13 +196,14 @@ export const CabBooking: React.FC<CabBookingProps> = ({
       customerPhone ? `📞 Mobile: ${customerPhone}` : '',
       specialNotes ? `📝 Special Note: ${specialNotes}` : '',
       ``,
+      `🚗 *Instruction for Chauffeur:* Tap the Driver Navigation link above to open Google Maps and drive directly to customer's live pickup point!`,
       `Please confirm available cabs, best driver rates, and dispatch details!`
     ].filter(Boolean).join('\n');
 
     return `https://wa.me/919959312174?text=${encodeURIComponent(lines)}`;
   };
 
-  // Automatically sends pickup and drop location to WhatsApp when Driver Pay is selected
+  // Automatically sends pickup, drop location, and Live Location GPS Link to Admin WhatsApp when Driver Pay is selected
   const handleSelectDriverPay = () => {
     setSelectedPaymentMode('driver_pay');
 
@@ -194,27 +215,69 @@ export const CabBooking: React.FC<CabBookingProps> = ({
     };
     const tripName = tripTypeLabels[tripType] || 'Cab Booking';
 
+    // Generate accurate Google Maps Live GPS Link & Turn-by-Turn Navigation Link
+    const pickupGpsLink = (pickup.lat !== 0 && pickup.lng !== 0)
+      ? createGoogleMapsGpsLink(pickup.lat, pickup.lng)
+      : resolveLocationGpsLink(pickup.name);
+
+    const pickupNavigateLink = (pickup.lat !== 0 && pickup.lng !== 0)
+      ? createGoogleMapsNavigateLink(pickup.lat, pickup.lng)
+      : resolveLocationNavigateLink(pickup.name);
+
+    const isLive = isLiveLocation(pickup);
+
     const lines = [
       `*🚖 NEW CAB BOOKING - PAY TO DRIVER*`,
-      `Hello Hari Travels, I am selecting *Pay to Driver* for my cab booking.`,
+      `Hello Hari Travels Admin, I booked a cab with *Pay to Driver* (Zero Advance).`,
       ``,
-      `📍 *Pickup Location:* ${pickup.name}`,
+      `📍 *Customer Pickup Point:* ${pickup.name}`,
+      isLive ? `🟢 *Customer Live Location Active:* Real-time device GPS coordinates shared!` : '',
+      `🧭 *DRIVER TURN-BY-TURN NAVIGATION LINK (Reach Customer):*\n${pickupNavigateLink}`,
+      `🗺️ *Live Location GPS Pin:*\n${pickupGpsLink}`,
+      ``,
       `🏁 *Drop Destination:* ${destination.name}`,
       `🛣️ *Distance:* ${distanceKm > 0 ? `${distanceKm} km (~${Math.round(distanceKm * 2.2)} mins)` : 'To be confirmed'}`,
       `📅 *Date & Time:* ${travelDate} at ${travelTime}`,
+      `🚗 *Vehicle:* ${selectedVehicle.name}`,
       `👥 *Passengers:* ${passengers}`,
       customerName ? `👤 *Passenger Name:* ${customerName}` : '',
       customerPhone ? `📞 *Phone Number:* ${customerPhone}` : '',
       specialNotes ? `📝 *Special Request:* ${specialNotes}` : '',
       ``,
       `💵 *Payment Mode:* Pay to Driver directly on pickup / drop (Zero Advance)`,
-      `Please assign our chauffeur and confirm cab dispatch!`
+      `⚡ *Chauffeur Action:* Click the Driver Navigation link above to navigate straight to the customer's live location pickup point!`
     ].filter(Boolean).join('\n');
 
     const waUrl = `https://wa.me/919959312174?text=${encodeURIComponent(lines)}`;
-    setDriverPayNotification(`Pickup (${pickup.name}) and Drop (${destination.name}) automatically sent to WhatsApp (+91 99593 12174)!`);
+    setDriverPayNotification(
+      isLive
+        ? `Customer Live Location (${pickup.name}) sent to WhatsApp dispatch! Chauffeur can navigate directly to your live GPS pickup point.`
+        : `Pickup (${pickup.name}) with Live GPS link saved to database and sent to Admin WhatsApp!`
+    );
     
-    // Automatically trigger WhatsApp opening without requiring extra permission
+    // Automatically save into Firestore database with pickup GPS link and coordinates
+    createRideBooking({
+      pickupLocation: pickup.name,
+      dropoffLocation: destination.name,
+      pickupGpsLink: pickupGpsLink,
+      pickupCoordinates: (pickup.lat !== 0 && pickup.lng !== 0) ? {
+        lat: pickup.lat,
+        lng: pickup.lng,
+        accuracy: pickup.accuracy
+      } : undefined,
+      date: travelDate,
+      time: travelTime,
+      customerName: customerName.trim() || 'Pilgrim Customer',
+      customerPhone: customerPhone.trim() || '+91 99593 12174',
+      vehicleType: selectedVehicle.name,
+      passengers: passengers,
+      tripType: tripName,
+      paymentMode: 'driver_pay',
+      notes: specialNotes.trim() || undefined,
+      status: 'pending'
+    }).catch((err) => console.error('Auto save to Firestore error:', err));
+
+    // Automatically trigger WhatsApp opening to Admin (+91 99593 12174)
     window.open(waUrl, '_blank');
   };
 
@@ -328,6 +391,45 @@ export const CabBooking: React.FC<CabBookingProps> = ({
           </div>
         </div>
 
+        {/* Customer Live Location Navigation Info Box */}
+        {(isLiveLocation(confirmedBooking.pickup) || (confirmedBooking.pickup.lat !== 0 && confirmedBooking.pickup.lng !== 0)) && (
+          <div className="my-4 p-4 bg-emerald-50 rounded-2xl border border-emerald-300 text-left text-xs text-emerald-950 space-y-2 shadow-2xs">
+            <div className="flex items-center justify-between font-bold">
+              <span className="flex items-center gap-1.5 text-emerald-900 text-xs sm:text-sm">
+                <LocateFixed className="w-4 h-4 text-emerald-600 animate-pulse" />
+                Customer Live Location Dispatched to Driver
+              </span>
+              <span className="text-[10px] bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded font-black">
+                Live GPS Active
+              </span>
+            </div>
+            <p className="text-[11px] sm:text-xs text-emerald-800">
+              Your exact live GPS coordinates have been sent to Hari Travels dispatch and driver <strong>{confirmedBooking.driver?.name}</strong>. The chauffeur will navigate directly to your live pick up point using Google Maps turn-by-turn driving directions!
+            </p>
+            <div className="pt-2 border-t border-emerald-200/80 flex flex-wrap items-center gap-2">
+              <a
+                href={createGoogleMapsNavigateLink(confirmedBooking.pickup.lat, confirmedBooking.pickup.lng)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-[11px] transition shadow-2xs"
+              >
+                <Navigation className="w-3.5 h-3.5" />
+                <span>Test Chauffeur Driving Navigation Link</span>
+                <ExternalLink className="w-3 h-3 text-emerald-200" />
+              </a>
+              <a
+                href={createGoogleMapsGpsLink(confirmedBooking.pickup.lat, confirmedBooking.pickup.lng)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white border border-emerald-300 text-emerald-800 font-bold text-[11px] hover:bg-emerald-100 transition shadow-2xs"
+              >
+                <span>View Google Maps Pin</span>
+                <ExternalLink className="w-3 h-3 text-emerald-600" />
+              </a>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <button
             onClick={() => onBookingConfirmed(confirmedBooking)}
@@ -403,13 +505,19 @@ export const CabBooking: React.FC<CabBookingProps> = ({
                       key={t.id}
                       type="button"
                       onClick={() => setTripType(t.id as TripType)}
-                      className={`p-2.5 sm:p-3 rounded-xl text-left border transition text-xs relative flex flex-col justify-between min-h-[72px] sm:min-h-[78px] ${
+                      className={`p-2.5 sm:p-3 rounded-xl text-left border transition text-xs relative flex flex-col justify-between min-h-[76px] sm:min-h-[82px] ${
                         tripType === t.id
-                          ? 'border-[#6B1724] bg-[#6B1724]/8 text-[#6B1724] font-bold shadow-xs'
+                          ? 'border-[#6B1724] bg-[#6B1724]/8 text-[#6B1724] font-bold shadow-xs ring-1 ring-[#6B1724]/30'
                           : 'border-stone-200 hover:border-stone-300 text-stone-700 bg-white'
                       }`}
                     >
-                      <span className="leading-snug">{t.label}</span>
+                      <div className="flex items-start justify-between gap-1">
+                        <span className="leading-snug">{t.label}</span>
+                        {t.id === 'hillclimb' && <Compass className="w-3 h-3 text-[#8C6D28] shrink-0 mt-0.5" />}
+                        {t.id === 'oneway' && <Navigation className="w-3 h-3 text-[#8C6D28] shrink-0 mt-0.5" />}
+                        {t.id === 'roundtrip' && <Car className="w-3 h-3 text-[#8C6D28] shrink-0 mt-0.5" />}
+                        {t.id === 'sightseeing' && <Sparkles className="w-3 h-3 text-[#8C6D28] shrink-0 mt-0.5" />}
+                      </div>
                       <span className="text-[9px] uppercase font-bold text-[#8C6D28] tracking-wider mt-1 block">
                         {t.badge}
                       </span>
@@ -841,6 +949,42 @@ export const CabBooking: React.FC<CabBookingProps> = ({
                 </div>
               </div>
 
+              {/* Customer Live Location Pickup Selected Banner */}
+              {isLiveLocation(pickup) && pickup.lat !== 0 && (
+                <div className="p-4 bg-gradient-to-r from-emerald-50 via-emerald-100/50 to-emerald-50 border-2 border-emerald-500 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-emerald-950 shadow-sm animate-fadeIn">
+                  <div className="flex items-start space-x-3">
+                    <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs border border-emerald-400">
+                      <LocateFixed className="w-5 h-5 animate-pulse" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm text-emerald-950">
+                          Customer Live Location Selected
+                        </span>
+                        <span className="text-[10px] bg-emerald-200 text-emerald-900 font-black px-2 py-0.5 rounded-full border border-emerald-300">
+                          GPS Lat {pickup.lat.toFixed(4)}, Lng {pickup.lng.toFixed(4)}
+                        </span>
+                      </div>
+                      <p className="text-emerald-800 text-[11px] sm:text-xs mt-1">
+                        When you book, your exact live location coordinates will be sent to the driver. The assigned chauffeur will use Google Maps turn-by-turn driving navigation to reach out directly to your pick up point!
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-end">
+                    <a
+                      href={createGoogleMapsNavigateLink(pickup.lat, pickup.lng)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-[11px] rounded-xl flex items-center gap-1.5 shadow-2xs transition"
+                    >
+                      <Navigation className="w-3.5 h-3.5" />
+                      <span>Test Driver Route</span>
+                      <ExternalLink className="w-3 h-3 opacity-70" />
+                    </a>
+                  </div>
+                </div>
+              )}
+
               {/* Validation Alert if None is selected */}
               {selectionError && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center space-x-2">
@@ -1047,19 +1191,22 @@ export const CabBooking: React.FC<CabBookingProps> = ({
                             <span className="font-bold text-xs sm:text-sm truncate">
                               {v.name}
                             </span>
-                            {isSelected && (
-                              <span className="w-2 h-2 rounded-full bg-[#6B1724] shrink-0" />
-                            )}
+                            <div className="flex items-center gap-1">
+                              <Car className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-[#6B1724]' : 'text-[#8C6D28]'}`} />
+                              {isSelected && (
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#6B1724] shrink-0" />
+                              )}
+                            </div>
                           </div>
                           <span className="text-[10px] text-stone-500 block truncate">
                             {v.passengers} Seats • {v.models.split('/')[0]}
                           </span>
                         </div>
 
-                        <div className="mt-2 pt-1.5 border-t border-stone-100 flex items-baseline justify-between">
-                          <span className="text-[9px] uppercase font-bold text-stone-400">Est. Fare</span>
-                          <span className={`text-xs sm:text-sm font-black ${isSelected ? 'text-[#6B1724]' : 'text-stone-900'}`}>
-                            ₹{vFare.totalFare}
+                        <div className="mt-2 pt-1.5 border-t border-stone-100 flex items-center justify-between">
+                          <span className="text-[9px] uppercase font-bold text-stone-400">Payment</span>
+                          <span className="text-[10px] sm:text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                            Pay on Drop
                           </span>
                         </div>
                       </button>
@@ -1091,9 +1238,6 @@ export const CabBooking: React.FC<CabBookingProps> = ({
                 </div>
 
                 <div className="w-full sm:w-auto flex items-center justify-between sm:justify-end gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-amber-200/60 shrink-0">
-                  <span className="text-xs font-black text-[#6B1724]">
-                    ₹{fareBreakdown.totalFare} total
-                  </span>
                   <span className="inline-block px-2.5 py-1 bg-white rounded-lg border border-amber-300 text-[10px] font-black text-[#6B1724] uppercase tracking-wide shadow-2xs">
                     Zero Advance Required
                   </span>
@@ -1402,7 +1546,9 @@ export const CabBooking: React.FC<CabBookingProps> = ({
 
                       <div className="shrink-0 w-full sm:w-auto">
                         <a
-                          href={`https://wa.me/919959312174?text=${encodeURIComponent(`Hello Hari Travels, I am booking a cab from ${pickup.name} to ${destination.name} (${distanceKm} km on ${travelDate} at ${travelTime}) and have initiated UPI payment to 9959312174@ybl. Please confirm dispatch!`)}`}
+                          href={`https://wa.me/919959312174?text=${encodeURIComponent(
+                            `Hello Hari Travels Admin, I am booking a cab from ${pickup.name} to ${destination.name} (${distanceKm} km on ${travelDate} at ${travelTime}).\n🗺️ Live Pickup GPS Link: ${(pickup.lat !== 0 && pickup.lng !== 0) ? `https://www.google.com/maps?q=${pickup.lat},${pickup.lng}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pickup.name)}`}\nPayment initiated to 9959312174@ybl. Please confirm chauffeur dispatch!`
+                          )}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center justify-center space-x-2 w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs"

@@ -1,0 +1,118 @@
+{
+  "entities": {
+    "rides": {
+      "title": "Ride Booking",
+      "description": "Customer ride bookings and reservations in Tirupati and Tirumala",
+      "type": "object",
+      "properties": {
+        "pickupLocation": {
+          "type": "string",
+          "description": "Pickup landmark or address in Tirupati/Tirumala"
+        },
+        "pickupGpsLink": {
+          "type": "string",
+          "description": "Google Maps live location GPS coordinate pin link for the pickup point"
+        },
+        "pickupCoordinates": {
+          "type": "object",
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" },
+            "accuracy": { "type": "number" }
+          },
+          "description": "Precise geographical coordinates of the pickup location"
+        },
+        "dropoffLocation": {
+          "type": "string",
+          "description": "Drop-off landmark or address"
+        },
+        "date": {
+          "type": "string",
+          "description": "Date of travel (YYYY-MM-DD)"
+        },
+        "time": {
+          "type": "string",
+          "description": "Pickup time (HH:MM)"
+        },
+        "customerName": {
+          "type": "string",
+          "description": "Name of the passenger"
+        },
+        "customerPhone": {
+          "type": "string",
+          "description": "Phone or WhatsApp contact number"
+        },
+        "vehicleType": {
+          "type": "string",
+          "description": "Selected vehicle type (e.g. Sedan, SUV Ertiga, Innova Crysta, Tempo Traveller)"
+        },
+        "passengers": {
+          "type": "number",
+          "description": "Number of passengers"
+        },
+        "estimatedFare": {
+          "type": "number",
+          "description": "Calculated or agreed trip fare in INR"
+        },
+        "tripType": {
+          "type": "string",
+          "description": "Hill Climb, One Way Drop, Round Trip, or Sightseeing"
+        },
+        "paymentMode": {
+          "type": "string",
+          "description": "driver_pay, upi, or online"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "approved", "cancelled", "completed"],
+          "description": "Lifecycle status of the ride reservation"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Special luggage or darshan instructions"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when booking was submitted"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of last status update"
+        },
+        "adminNotes": {
+          "type": "string",
+          "description": "Internal driver or dispatcher allocation remarks"
+        }
+      },
+      "required": ["pickupLocation", "dropoffLocation", "date", "time", "customerName", "customerPhone", "status"]
+    },
+    "admins": {
+      "title": "Admin User",
+      "description": "Authorized administrators with dispatch management rights",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "description": "Admin email address"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["admin", "superadmin", "dispatcher"],
+          "description": "Role level"
+        },
+        "name": {
+          "type": "string",
+          "description": "Admin full name"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["email", "role"]
+    }
+  },
+  "firestoreRules": "firestore.rules"
+}

@@ -396,15 +396,19 @@ export const LiveTrackingScreen: React.FC<LiveTrackingScreenProps> = ({
           >
             ← Back to Hari Travels Home
           </button>
-          <div className="flex items-center space-x-3">
-            <h1 className="font-display text-2xl md:text-3xl font-bold text-[#3B0A11]">
-              Live GPS Ride Telemetry
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="font-display text-2xl md:text-3xl font-bold text-[#3B0A11] flex items-center gap-2">
+              <span>Track Your Cab Live</span>
+              <span className="text-[#8C6D28] font-serif">- Govindha</span>
             </h1>
             <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-[#6B1724] text-white flex items-center shadow-xs">
               <span className="w-2 h-2 rounded-full bg-[#D4AF37] animate-ping mr-1.5"></span>
               ACTIVE SATELLITE FEED
             </span>
           </div>
+          <p className="text-xs text-[#8C6D28] font-serif font-bold italic mt-0.5">
+            Safe &amp; Blessed Tirumala Journeys • శ్రీవారి దివ్య రక్షణ
+          </p>
         </div>
 
         {/* Engine Controls: City Switcher, Speed Controls, Real Device GPS */}

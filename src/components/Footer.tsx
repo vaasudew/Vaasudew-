@@ -6,9 +6,10 @@ import {
   MessageCircle, 
   ShieldCheck, 
   Car, 
-  Navigation,
+  Navigation, 
   ExternalLink 
 } from 'lucide-react';
+import { GovindaNamaShankhaChakra } from './GovindaNamaShankhaChakra';
 
 interface FooterProps {
   setActiveTab: (tab: string) => void;
@@ -22,17 +23,25 @@ export const Footer: React.FC<FooterProps> = ({ setActiveTab }) => {
           {/* Brand Col */}
           <div className="lg:col-span-4 space-y-4">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6B1724] to-[#450A12] flex items-center justify-center text-[#D4AF37] border border-[#D4AF37]/40 shadow-xs shrink-0">
-                <Compass className="w-5 h-5" />
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#6B1724] to-[#3B0A11] flex items-center justify-center p-1.5 border border-[#D4AF37]/50 shadow-xs shrink-0">
+                <GovindaNamaShankhaChakra variant="full" className="w-full h-auto" />
               </div>
               <div className="flex flex-col justify-center">
-                <span className="font-display text-xl font-bold tracking-wider text-white flex items-center gap-1.5 leading-none">
-                  HARI TRAVELS
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#D4AF37]"></span>
-                </span>
-                <span className="text-[10px] tracking-[0.2em] uppercase font-semibold text-[#D4AF37] block mt-1">
-                  Tirupati • Tirumala
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="font-display text-xl font-bold tracking-wider text-white flex items-center gap-1.5 leading-none">
+                    HARRIS TRAVELS
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#D4AF37]"></span>
+                  </span>
+                  <GovindaNamaShankhaChakra variant="full" className="h-6 w-auto hidden sm:inline-block" />
+                </div>
+                <div className="flex items-center gap-1.5 mt-1">
+                  <span className="text-[10px] tracking-[0.2em] uppercase font-semibold text-[#D4AF37] block">
+                    Tirupati • Tirumala
+                  </span>
+                  <span className="text-[10px] text-[#D4AF37]/80 font-serif font-bold">
+                    • శంఖ-చక్ర-గోవింద నామం
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -73,6 +82,11 @@ export const Footer: React.FC<FooterProps> = ({ setActiveTab }) => {
             </h4>
             <ul className="space-y-2 text-stone-400">
               <li>
+                <button onClick={() => setActiveTab('ride-booking')} className="hover:text-[#D4AF37] transition font-medium text-[#D4AF37]/90">
+                  ⚡ Book Ride (Direct)
+                </button>
+              </li>
+              <li>
                 <button onClick={() => setActiveTab('cabs')} className="hover:text-[#D4AF37] transition">
                   Tirupati Cab Booking
                 </button>
@@ -85,6 +99,12 @@ export const Footer: React.FC<FooterProps> = ({ setActiveTab }) => {
               <li>
                 <button onClick={() => setActiveTab('destinations')} className="hover:text-[#D4AF37] transition">
                   Temple Tourism Guide
+                </button>
+              </li>
+              <li className="pt-2 border-t border-stone-700/60">
+                <button onClick={() => setActiveTab('admin')} className="hover:text-[#D4AF37] transition flex items-center gap-1 text-stone-400 hover:text-white">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#D4AF37]" />
+                  <span>Admin Login Portal</span>
                 </button>
               </li>
             </ul>

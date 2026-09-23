@@ -12,10 +12,14 @@ import {
   Award, 
   ArrowRight,
   TrendingUp,
-  RotateCcw
+  RotateCcw,
+  ExternalLink,
+  MessageCircle,
+  LocateFixed
 } from 'lucide-react';
 import { RideBooking, DriverInfo } from '../types/travel';
 import { DEMO_DRIVERS, INITIAL_DEMO_BOOKING } from '../data/travelData';
+import { createGoogleMapsNavigateLink, createGoogleMapsGpsLink } from '../utils/whatsapp';
 
 interface DriverAppProps {
   currentBooking: RideBooking | null;
@@ -203,6 +207,57 @@ export const DriverApp: React.FC<DriverAppProps> = ({
                 <span className="text-[10px] uppercase font-bold text-stone-400">Destination</span>
                 <p className="text-xs font-bold text-stone-900">{activeRide.destination.name}</p>
                 <p className="text-[11px] text-stone-500">{activeRide.destination.address}</p>
+              </div>
+            </div>
+
+            {/* Driver Live Location Navigation Card to Reach Customer */}
+            <div className="p-4 bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 rounded-2xl border-2 border-emerald-500 shadow-sm space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center space-x-2.5">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-xs shrink-0">
+                    <LocateFixed className="w-5 h-5 animate-pulse" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-xs sm:text-sm text-emerald-950">Customer Live Location Navigation</span>
+                      <span className="text-[10px] font-black bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded-full">
+                        Active GPS
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-emerald-800 mt-0.5">
+                      Customer shared their real-time live location. Use Google Maps turn-by-turn driving directions to reach out directly to customer's pickup point.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-emerald-200 flex flex-wrap items-center justify-between gap-2">
+                <div className="text-[11px] text-emerald-900 font-mono truncate max-w-xs">
+                  📍 {activeRide.pickup.name}
+                </div>
+                <div className="flex items-center gap-2">
+                  <a
+                    href={createGoogleMapsNavigateLink(activeRide.pickup.lat || 13.6288, activeRide.pickup.lng || 79.4192)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-sm transition"
+                  >
+                    <Navigation className="w-3.5 h-3.5" />
+                    <span>Drive to Customer Pickup</span>
+                    <ExternalLink className="w-3 h-3 text-emerald-200" />
+                  </a>
+                  <a
+                    href={`https://wa.me/${activeRide.customerPhone.replace(/\D/g, '')}?text=${encodeURIComponent(
+                      `Hello ${activeRide.customerName}, this is your Hari Travels driver ${driver.name}. I am navigating directly to your live GPS pickup point now in vehicle ${driver.vehicleNumber}.`
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-xl transition"
+                    title="WhatsApp Customer"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                  </a>
+                </div>
               </div>
             </div>
 

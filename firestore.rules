@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        (request.auth.token.email != null && (
+          request.auth.token.email in ['vasuvani2125@gmail.com', 'admin@haritravels.in', 'dispatcher@haritravels.in', 'admin@gmail.com'] ||
+          request.auth.token.email.matches('.*@haritravels\\.in$')
+        )) ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // Rides collection: Anyone can create a ride booking; Admins can read, update, and delete all rides
+    match /rides/{rideId} {
+      allow create: if request.resource.data.pickupLocation is string
+                    && request.resource.data.dropoffLocation is string
+                    && request.resource.data.date is string
+                    && request.resource.data.time is string;
+      allow read: if true;
+      allow update, delete: if isAdmin();
+    }
+
+    // Admins registry
+    match /admins/{adminId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() || (isAuthenticated() && request.auth.uid == adminId);
+    }
+  }
+}

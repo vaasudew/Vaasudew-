@@ -248,7 +248,7 @@ export const TOUR_PACKAGES: TourPackage[] = [
       'Assistance with senior citizen drops near entrance'
     ],
     excluded: [
-      'Special entry darshan tickets at individual temples (₹20 - ₹100 each)',
+      'Special entry darshan tickets at individual temples (booked at temple counters)',
       'Personal archana offerings'
     ],
     itinerary: [
@@ -323,7 +323,7 @@ export const TOUR_PACKAGES: TourPackage[] = [
       'AC on throughout the journey'
     ],
     excluded: [
-      'Temple puja tickets (Rahu-Ketu puja tokens ₹500 to ₹2500 paid at temple counter)',
+      'Temple puja tickets (Rahu-Ketu puja tokens paid directly at temple counter)',
       'Prasadam and meals'
     ],
     itinerary: [
@@ -358,8 +358,8 @@ export const TOUR_PACKAGES: TourPackage[] = [
       'Parking charges included'
     ],
     excluded: [
-      'ASI entry fee (₹25 per person)',
-      'Sound & Light show ticket (evening show ₹50)'
+      'ASI monument entry tickets',
+      'Sound & Light show tickets (evening show)'
     ],
     itinerary: [
       { time: '02:30 PM', activity: 'Pickup & Drive to Chandragiri', description: '14 km pleasant countryside drive' },
@@ -394,7 +394,7 @@ export const DESTINATIONS: Destination[] = [
     attire: 'Strict TTD traditional dress code: Dhoti/Kurta for men; Saree/Chudidar with dupatta for women. Western wear strictly disallowed.',
     thingsToKnow: [
       'Pilgrim mobile phones and electronic devices must be deposited at TTD security counters before entering Vaikuntam complex.',
-      'Special Entry Darshan (SED ₹300) and Angapradakshinam must be booked months in advance via official TTD portal.',
+      'Special Entry Darshan (SED) and Angapradakshinam must be booked months in advance via official TTD portal.',
       'Ghat Road safety rule: Vehicles must take at least 28 minutes for uphill and 40 minutes for downhill travel to prevent accidents.',
       'Hari Travels cabs have registered TTD toll FASTag and certified hill drivers.'
     ],
@@ -480,7 +480,7 @@ export const DESTINATIONS: Destination[] = [
     visitingHours: '05:00 AM – 09:00 PM',
     attire: 'Traditional South Indian attire',
     thingsToKnow: [
-      'Quick ₹100 / ₹200 special entry darshan lines usually take 30 to 45 mins.',
+      'Special entry darshan lines usually take 30 to 45 mins.',
       'Magnificent Dravidian gopuram, stone pillared mandapams, and sacred Padma Sarovaram tank.',
       'Delicious laddu and pulihora prasadam available at TTD counters.',
       'Conveniently located near Tirupati railway station and airport highway.'

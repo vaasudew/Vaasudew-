@@ -17,7 +17,8 @@ import {
   Loader2,
   Crosshair,
   XCircle,
-  Search
+  Search,
+  ChevronRight
 } from 'lucide-react';
 import { LocationPoint, VehicleType } from '../types/travel';
 import { POPULAR_LOCATIONS, VEHICLE_OPTIONS, NONE_LOCATION } from '../data/travelData';
@@ -122,10 +123,22 @@ export const Hero: React.FC<HeroProps> = ({
               </span>
             </div>
 
-            <h1 className="font-display text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[#24211D] leading-[1.15] sm:leading-[1.12]">
-              Sacred Tirupati Journey.{' '}
-              <span className="block text-[#6B1724]">Track Your Cab Live.</span>
-              <span className="block text-[#8C6D28] font-normal italic font-serif text-2xl sm:text-4xl lg:text-5xl mt-1">Tirumala Hill Pilgrimage.</span>
+            {/* Sacred Telugu Govinda Chanting Badge */}
+            <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-2xl bg-[#D4AF37]/15 border border-[#D4AF37]/70 text-[#6B1724] shadow-xs backdrop-blur-xs">
+              <span className="text-xs sm:text-sm font-serif font-bold text-[#8C6D28]">ఓం నమో వేంకటేశాయ</span>
+              <span className="text-amber-400">•</span>
+              <span className="text-xs sm:text-sm font-bold text-[#6B1724] font-serif">
+                ఏడుకొండలవాడ వేంకటరమణ గోవిందా గోవిందా!
+              </span>
+            </div>
+
+            <h1 className="font-display tracking-tight text-[#24211D] leading-[1.15] sm:leading-[1.12]">
+              <span className="block text-[#8C6D28] font-serif font-bold text-2xl sm:text-4xl lg:text-5xl tracking-wide mb-1 sm:mb-2">
+                Govindha
+              </span>
+              <span className="block text-[#6B1724] font-display text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight">
+                Safe &amp; Blessed Tirumala Journeys
+              </span>
             </h1>
 
             <p className="text-sm sm:text-lg text-stone-700 max-w-xl leading-relaxed font-medium">
@@ -165,34 +178,36 @@ export const Hero: React.FC<HeroProps> = ({
             </div>
 
             {/* Value Badges */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-1 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 pt-1 text-xs">
               <div className="flex items-center space-x-2 text-stone-800 bg-white/90 backdrop-blur-xs p-2.5 rounded-xl border border-[#E8DFC8] shadow-xs">
                 <Navigation className="w-4 h-4 text-[#6B1724] shrink-0" />
-                <span className="font-semibold">Live GPS Tracking</span>
+                <span className="font-semibold text-xs">Live GPS Tracking</span>
               </div>
               <div className="flex items-center space-x-2 text-stone-800 bg-white/90 backdrop-blur-xs p-2.5 rounded-xl border border-[#E8DFC8] shadow-xs">
                 <ShieldCheck className="w-4 h-4 text-[#8C6D28] shrink-0" />
-                <span className="font-semibold">Ghat Certified Drivers</span>
+                <span className="font-semibold text-xs">Ghat Certified Drivers</span>
               </div>
-              <div className="flex items-center space-x-2 text-stone-800 bg-white/90 backdrop-blur-xs p-2.5 rounded-xl border border-[#E8DFC8] shadow-xs col-span-2 sm:col-span-1">
+              <div className="flex items-center space-x-2 text-stone-800 bg-white/90 backdrop-blur-xs p-2.5 rounded-xl border border-[#E8DFC8] shadow-xs">
                 <Sparkles className="w-4 h-4 text-[#C59B27] shrink-0" />
-                <span className="font-semibold">FASTag & Hill Permits</span>
+                <span className="font-semibold text-xs">FASTag & Hill Permits</span>
               </div>
             </div>
 
             {/* Quick Action links */}
-            <div className="flex flex-wrap gap-3 pt-2">
+            <div className="flex flex-wrap gap-2.5 sm:gap-3 pt-2">
               <button
                 onClick={onExploreTours}
-                className="px-5 py-2.5 rounded-xl text-xs font-bold text-[#6B1724] bg-white/90 hover:bg-white border border-[#6B1724]/40 shadow-xs transition flex items-center"
+                className="px-4 sm:px-5 py-2.5 rounded-xl text-xs font-bold text-[#6B1724] bg-white/90 hover:bg-white border border-[#6B1724]/40 shadow-xs transition flex items-center gap-1.5"
               >
-                View Curated Temple Trails <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                <span>View Curated Temple Trails</span>
+                <ChevronRight className="w-3.5 h-3.5 text-[#8C6D28] shrink-0" />
               </button>
               <button
                 onClick={onExploreDestinations}
-                className="px-5 py-2.5 rounded-xl text-xs font-bold text-stone-700 hover:text-stone-900 bg-white/80 hover:bg-white border border-[#E8DFC8] transition flex items-center"
+                className="px-4 sm:px-5 py-2.5 rounded-xl text-xs font-bold text-stone-700 bg-white/90 hover:bg-white border border-stone-300 shadow-xs transition flex items-center gap-1.5"
               >
-                Explore Tirumala Sacred Spots
+                <span>Explore Tirumala Sacred Spots</span>
+                <ChevronRight className="w-3.5 h-3.5 text-stone-400 shrink-0" />
               </button>
             </div>
           </div>
@@ -511,7 +526,7 @@ export const Hero: React.FC<HeroProps> = ({
                 {/* Vehicle Choice */}
                 <div>
                   <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-700 mb-1.5 flex items-center">
-                    <Car className="w-3.5 h-3.5 mr-1 text-[#6B1724]" />
+                    <Car className="w-3.5 h-3.5 mr-1.5 text-[#6B1724]" />
                     Preferred Vehicle
                   </label>
                   <div className="grid grid-cols-3 gap-2">
@@ -520,14 +535,20 @@ export const Hero: React.FC<HeroProps> = ({
                         key={v.id}
                         type="button"
                         onClick={() => setSelectedVehicle(v.id)}
-                        className={`p-2 rounded-xl text-left border transition ${
+                        className={`p-2 sm:p-2.5 rounded-xl text-left border transition flex flex-col justify-between min-h-[58px] sm:min-h-[64px] ${
                           selectedVehicle === v.id
-                            ? 'border-[#6B1724] bg-[#6B1724]/8 text-[#6B1724] font-bold shadow-xs'
+                            ? 'border-[#6B1724] bg-[#6B1724]/8 text-[#6B1724] font-bold shadow-xs ring-1 ring-[#6B1724]/30'
                             : 'border-stone-200 text-stone-700 hover:bg-stone-50'
                         }`}
                       >
-                        <div className="font-bold text-xs truncate">{v.name.split(' ')[0]}</div>
-                        <div className="text-[10px] text-stone-500">{v.passengers} Seats</div>
+                        <div className="flex items-center justify-between gap-1 w-full">
+                          <span className="font-bold text-xs truncate">{v.name.split(' ')[0]}</span>
+                          <Car className="w-3 h-3 text-[#8C6D28] shrink-0" />
+                        </div>
+                        <div className="text-[10px] text-stone-500 mt-1 flex items-center justify-between w-full">
+                          <span>{v.passengers} Seats</span>
+                          <span className="font-mono text-stone-600 text-[9px] font-semibold">₹{v.perKmRate}/km</span>
+                        </div>
                       </button>
                     ))}
                   </div>
