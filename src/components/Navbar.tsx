@@ -114,20 +114,20 @@ export const Navbar: React.FC<NavbarProps> = ({
       <nav className="sticky top-0 z-40 bg-[#FAF7F2]/95 backdrop-blur-md border-b border-[#E8DFC8]/60 shadow-xs">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 sm:h-20">
-            {/* Logo, Govinda Nama Shankhachakra Symbol & Search Magnifying Glass Icon */}
-            <div className="flex items-center space-x-1.5 sm:space-x-3 shrink-0 min-w-0">
+            {/* Logo & Govinda Nama Shankhachakra Symbol */}
+            <div className="flex items-center space-x-2 sm:space-x-3 shrink-0 min-w-0">
               <div 
                 onClick={() => { setActiveTab('home'); }} 
-                className="flex items-center space-x-1.5 sm:space-x-2.5 cursor-pointer group shrink-0"
+                className="flex items-center space-x-2.5 sm:space-x-3 cursor-pointer group shrink-0"
               >
                 {/* Govinda Nama Shankhachakra Symbol Emblem */}
                 <div 
-                  className="w-8 h-8 sm:w-10 sm:h-10 lg:w-11 lg:h-11 rounded-xl bg-gradient-to-br from-[#6B1724] to-[#450A12] flex items-center justify-center text-[#D4AF37] shadow-sm border border-[#D4AF37]/40 group-hover:scale-105 transition shrink-0 p-0.5 sm:p-1"
+                  className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-[#6B1724] to-[#450A12] flex items-center justify-center text-[#D4AF37] shadow-sm border border-[#D4AF37]/40 group-hover:scale-105 transition shrink-0 p-0.5 sm:p-1"
                   title="శ్రీ వేంకటేశ్వర శంఖ చక్ర నామం (Govinda Nama Shankhachakra Symbol)"
                 >
                   <svg 
                     viewBox="0 0 64 36" 
-                    className="w-6 h-3.5 sm:w-8 sm:h-4.5 lg:w-8.5 lg:h-5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]" 
+                    className="w-7 h-4 sm:w-9 sm:h-5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]" 
                     fill="none" 
                     xmlns="http://www.w3.org/2000/svg"
                     aria-label="Govinda Nama Shankhachakra Symbol"
@@ -195,20 +195,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </svg>
                 </div>
 
-                {/* Search Magnifying Glass Icon next to Govinda Nama Shankhachakra Symbol */}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsSearchOpen(true);
-                  }}
-                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-[#FAF7F2] to-amber-50/70 hover:from-amber-100 hover:to-[#D4AF37]/20 text-[#6B1724] hover:text-[#3B0A11] border border-[#D4AF37]/60 shadow-2xs hover:shadow-xs transition flex items-center justify-center group/search shrink-0 cursor-pointer"
-                  title="Search Tirupati temples, tours, and cabs"
-                  aria-label="Search"
-                >
-                  <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#8C6D28] group-hover/search:text-[#6B1724] group-hover/search:scale-110 transition stroke-[2.25]" />
-                </button>
-
                 <div className="flex flex-col justify-center">
                   <span className="font-display text-base sm:text-xl lg:text-2xl font-bold tracking-wider text-[#3B0A11] flex items-center gap-1 sm:gap-1.5 leading-none whitespace-nowrap">
                     HARI TRAVELS
@@ -222,7 +208,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
 
             {/* Desktop Navigation Links */}
-            <div className="hidden lg:flex items-center space-x-1">
+            <div className="hidden lg:flex items-center space-x-1.5">
               {navItems.map((item) => {
                 const isActive = activeTab === item.id;
                 return (
@@ -231,9 +217,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                     onClick={() => {
                       setActiveTab(item.id);
                     }}
-                    className={`px-3.5 py-2 rounded-lg text-sm font-medium transition flex items-center relative ${
+                    className={`px-3.5 py-2 rounded-xl text-sm font-semibold transition flex items-center relative ${
                       isActive 
-                        ? 'text-[#6B1724] font-semibold bg-[#6B1724]/8' 
+                        ? 'text-[#6B1724] bg-[#6B1724]/8 shadow-2xs' 
                         : 'text-[#4A453E] hover:text-[#6B1724] hover:bg-black/4'
                     }`}
                   >
@@ -255,7 +241,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 href="https://wa.me/919959312174?text=Hello%20Hari%20Travels%2C%20I%20would%20like%20to%20book%20a%20cab%20in%20Tirupati%20%2F%20Tirumala."
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-300 hover:bg-emerald-100 transition flex items-center"
+                className="h-10 px-4 rounded-xl text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-300 hover:bg-emerald-100 transition flex items-center justify-center shadow-2xs"
               >
                 <MessageCircle className="w-3.5 h-3.5 mr-1.5 text-emerald-600 shrink-0" />
                 WhatsApp Us
@@ -263,7 +249,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               <button
                 onClick={onOpenBooking}
-                className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-[#6B1724] to-[#7D1B2A] text-white shadow-sm hover:shadow-md hover:from-[#58111A] hover:to-[#6B1724] transition flex items-center border border-[#D4AF37]/30"
+                className="h-10 px-5 rounded-xl text-sm font-semibold bg-gradient-to-r from-[#6B1724] to-[#7D1B2A] text-white shadow-sm hover:shadow-md hover:from-[#58111A] hover:to-[#6B1724] transition flex items-center justify-center border border-[#D4AF37]/30"
               >
                 <Car className="w-4 h-4 mr-2 text-[#D4AF37] shrink-0" />
                 Book Now
@@ -276,22 +262,22 @@ export const Navbar: React.FC<NavbarProps> = ({
                 href="https://wa.me/919959312174?text=Hello%20Hari%20Travels%2C%20I%20would%20like%20to%20book%20a%20cab%20in%20Tirupati%20%2F%20Tirumala."
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-8 h-8 sm:w-auto sm:px-2.5 sm:py-1.5 text-xs font-bold bg-[#25D366] text-white rounded-xl flex items-center justify-center shadow-xs"
+                className="h-9 px-2.5 sm:px-3 text-xs font-bold bg-[#25D366] text-white rounded-xl flex items-center justify-center shadow-xs"
                 title="WhatsApp Us"
               >
                 <MessageCircle className="w-4 h-4 fill-white text-emerald-600 shrink-0" />
-                <span className="hidden sm:inline ml-1 text-[11px]">WhatsApp</span>
+                <span className="hidden sm:inline ml-1 text-xs">WhatsApp</span>
               </a>
               <button
                 onClick={onOpenBooking}
-                className="h-8 sm:h-9 px-2.5 sm:px-3 text-xs font-bold bg-[#6B1724] text-white rounded-xl shadow-xs flex items-center gap-1 shrink-0"
+                className="h-9 px-3 sm:px-3.5 text-xs font-bold bg-[#6B1724] text-white rounded-xl shadow-xs flex items-center gap-1.5 shrink-0"
               >
                 <Car className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
                 <span>Book</span>
               </button>
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl text-[#4A453E] hover:bg-[#6B1724]/10 transition flex items-center justify-center shrink-0 border border-stone-200 sm:border-transparent"
+                className="w-9 h-9 rounded-xl text-[#4A453E] hover:bg-[#6B1724]/10 transition flex items-center justify-center shrink-0 border border-stone-200"
                 aria-label="Toggle menu"
               >
                 {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}

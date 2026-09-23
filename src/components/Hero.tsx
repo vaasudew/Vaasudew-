@@ -545,9 +545,8 @@ export const Hero: React.FC<HeroProps> = ({
                           <span className="font-bold text-xs truncate">{v.name.split(' ')[0]}</span>
                           <Car className="w-3 h-3 text-[#8C6D28] shrink-0" />
                         </div>
-                        <div className="text-[10px] text-stone-500 mt-1 flex items-center justify-between w-full">
-                          <span>{v.passengers} Seats</span>
-                          <span className="font-mono text-stone-600 text-[9px] font-semibold">₹{v.perKmRate}/km</span>
+                        <div className="text-[10px] text-stone-500 mt-1">
+                          {v.passengers} Seats
                         </div>
                       </button>
                     ))}
