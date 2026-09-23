@@ -100,12 +100,12 @@ export const Hero: React.FC<HeroProps> = ({
           src="https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&w=1920&q=85"
           alt="Tirumala Sri Venkateswara Temple"
           referrerPolicy="no-referrer"
-          className="w-full h-full object-cover object-center scale-105 filter brightness-[0.88] contrast-[1.05]"
+          className="w-full h-full object-cover object-center scale-105 filter brightness-[0.95] contrast-[1.05] opacity-75 transition-opacity duration-700"
         />
         {/* Multilayer gradient for crystal clear contrast and temple ambience */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#FAF7F2]/95 via-[#FAF7F2]/88 to-[#FAF7F2]/75 md:to-[#FAF7F2]/60 backdrop-blur-[2px]"></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-[#FAF7F2] via-transparent to-[#3B0A11]/30"></div>
-        <div className="absolute inset-0 bg-radial from-transparent via-[#FAF7F2]/20 to-[#FAF7F2]/80"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-[#FAF7F2]/88 via-[#FAF7F2]/75 to-[#FAF7F2]/55 md:to-[#FAF7F2]/45"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-[#FAF7F2] via-transparent to-[#3B0A11]/20"></div>
+        <div className="absolute inset-0 bg-radial from-transparent via-[#FAF7F2]/10 to-[#FAF7F2]/60"></div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
