@@ -1,4 +1,14 @@
-export type VehicleType = 'mini' | 'sedan' | 'suv' | 'innova' | 'tempo';
+export type VehicleType = 
+  | 'mini' 
+  | 'sedan' 
+  | 'suv' 
+  | 'innova' 
+  | 'tempo' 
+  | 'toyota-etios' 
+  | 'ertiga' 
+  | 'toyota-innova' 
+  | 'tempo-traveller'
+  | string;
 
 export type TripType = 'oneway' | 'roundtrip' | 'hillclimb' | 'sightseeing';
 

@@ -12,8 +12,9 @@ import {
   Sparkles, 
   AlertCircle,
   HelpCircle,
-  QrCode,
+  Smartphone,
   Phone,
+  PhoneCall,
   MessageCircle,
   KeyRound,
   Search,
@@ -21,7 +22,13 @@ import {
   Crosshair,
   Loader2,
   XCircle,
-  LocateFixed
+  LocateFixed,
+  Navigation,
+  Copy,
+  Check,
+  Banknote,
+  Send,
+  ExternalLink
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { 
@@ -39,7 +46,6 @@ import {
   NONE_LOCATION
 } from '../data/travelData';
 import { InteractiveMap } from './InteractiveMap';
-import { RadarMatchingModal } from './RadarMatchingModal';
 import { useLiveLocation, isNoneLocation, isLiveLocation } from '../hooks/useLiveLocation';
 
 interface CabBookingProps {
@@ -70,12 +76,13 @@ export const CabBooking: React.FC<CabBookingProps> = ({
   );
   const [travelTime, setTravelTime] = useState<string>('09:30 AM');
   const [passengers, setPassengers] = useState<number>(3);
-  const [customerName, setCustomerName] = useState<string>('Venkata Raman');
-  const [customerPhone, setCustomerPhone] = useState<string>('+91 98480 12345');
-  const [specialNotes, setSpecialNotes] = useState<string>('Have luggage and elder passenger needing gentle ghat driving.');
-  const [paymentMethod, setPaymentMethod] = useState<'upi' | 'card' | 'cash'>('upi');
+  const [customerName, setCustomerName] = useState<string>('');
+  const [customerPhone, setCustomerPhone] = useState<string>('');
+  const [specialNotes, setSpecialNotes] = useState<string>('');
+  const [selectedPaymentMode, setSelectedPaymentMode] = useState<'none' | 'driver_pay' | 'upi'>('none');
+  const [copiedUpi, setCopiedUpi] = useState<boolean>(false);
+  const [driverPayNotification, setDriverPayNotification] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [isSearchingRadar, setIsSearchingRadar] = useState<boolean>(false);
   const [confirmedBooking, setConfirmedBooking] = useState<RideBooking | null>(null);
   const [showInteractiveMap, setShowInteractiveMap] = useState<boolean>(true);
   const [searchFilter, setSearchFilter] = useState<string>('');
@@ -146,48 +153,100 @@ export const CabBooking: React.FC<CabBookingProps> = ({
 
   const fareBreakdown = calculateFare(selectedVehicle, distanceKm, isGhatRoute, tripType);
 
-  const handleConfirmAndPay = () => {
-    // Launch driver matching radar animation
-    setIsSearchingRadar(true);
+  // Generate URL-encoded WhatsApp booking message with all selected route and schedule options
+  const getWhatsAppBookingUrl = () => {
+    const tripTypeLabels: Record<TripType, string> = {
+      hillclimb: 'Tirumala Hill Climb (FASTag & Ghat Toll Included)',
+      oneway: 'One Way Drop',
+      roundtrip: 'Round Trip (Wait & Return)',
+      sightseeing: 'Full Day Sightseeing (8 Hours / Temple Darshan)'
+    };
+    const tripName = tripTypeLabels[tripType] || 'Cab Booking';
+
+    const lines = [
+      `Hello Hari Travels, I would like to book a cab in Tirupati / Tirumala.`,
+      ``,
+      `🚖 Trip Type: ${tripName}`,
+      `📍 Pickup Location: ${pickup.name}`,
+      `🏁 Drop Destination: ${destination.name}`,
+      `🛣️ Route Distance: ${distanceKm > 0 ? `${distanceKm} km (~${Math.round(distanceKm * 2.2)} mins)` : 'To be confirmed'}`,
+      `📅 Date of Journey: ${travelDate} at ${travelTime}`,
+      `👥 Passengers: ${passengers}`,
+      customerName ? `👤 Pilgrim Name: ${customerName}` : '',
+      customerPhone ? `📞 Mobile: ${customerPhone}` : '',
+      specialNotes ? `📝 Special Note: ${specialNotes}` : '',
+      ``,
+      `Please confirm available cabs, best driver rates, and dispatch details!`
+    ].filter(Boolean).join('\n');
+
+    return `https://wa.me/919959312174?text=${encodeURIComponent(lines)}`;
   };
 
-  const handleDriverMatched = (matchedDriver: DriverInfo, otp: string) => {
-    setIsSearchingRadar(false);
-    const randomCode = 'HT' + Math.floor(10000 + Math.random() * 90000);
-    const newBooking: RideBooking = {
-      id: `HT-${Date.now().toString().slice(-5)}`,
-      bookingCode: randomCode,
-      otp: otp,
-      customerName,
-      customerPhone,
-      pickup,
-      destination,
-      date: travelDate,
-      time: travelTime,
-      passengers,
-      vehicle: selectedVehicle,
-      tripType,
-      distanceKm,
-      durationMinutes: Math.round(distanceKm * 2.2),
-      fareBreakdown,
-      status: 'driver_coming',
-      driver: matchedDriver,
-      createdAt: new Date().toISOString(),
-      paymentMethod,
-      paymentStatus: paymentMethod === 'cash' ? 'at_pickup' : 'paid',
-      specialNotes
-    };
+  // Automatically sends pickup and drop location to WhatsApp when Driver Pay is selected
+  const handleSelectDriverPay = () => {
+    setSelectedPaymentMode('driver_pay');
 
-    setConfirmedBooking(newBooking);
-    try {
-      confetti({
-        particleCount: 100,
-        spread: 80,
-        origin: { y: 0.6 }
-      });
-    } catch (e) {
-      // ignore if not supported
+    const tripTypeLabels: Record<TripType, string> = {
+      hillclimb: 'Tirumala Hill Climb (FASTag & Ghat Toll Included)',
+      oneway: 'One Way Drop',
+      roundtrip: 'Round Trip (Wait & Return)',
+      sightseeing: 'Full Day Sightseeing (8 Hours / Temple Darshan)'
+    };
+    const tripName = tripTypeLabels[tripType] || 'Cab Booking';
+
+    const lines = [
+      `*🚖 NEW CAB BOOKING - PAY TO DRIVER*`,
+      `Hello Hari Travels, I am selecting *Pay to Driver* for my cab booking.`,
+      ``,
+      `📍 *Pickup Location:* ${pickup.name}`,
+      `🏁 *Drop Destination:* ${destination.name}`,
+      `🛣️ *Distance:* ${distanceKm > 0 ? `${distanceKm} km (~${Math.round(distanceKm * 2.2)} mins)` : 'To be confirmed'}`,
+      `📅 *Date & Time:* ${travelDate} at ${travelTime}`,
+      `👥 *Passengers:* ${passengers}`,
+      customerName ? `👤 *Passenger Name:* ${customerName}` : '',
+      customerPhone ? `📞 *Phone Number:* ${customerPhone}` : '',
+      specialNotes ? `📝 *Special Request:* ${specialNotes}` : '',
+      ``,
+      `💵 *Payment Mode:* Pay to Driver directly on pickup / drop (Zero Advance)`,
+      `Please assign our chauffeur and confirm cab dispatch!`
+    ].filter(Boolean).join('\n');
+
+    const waUrl = `https://wa.me/919959312174?text=${encodeURIComponent(lines)}`;
+    setDriverPayNotification(`Pickup (${pickup.name}) and Drop (${destination.name}) automatically sent to WhatsApp (+91 99593 12174)!`);
+    
+    // Automatically trigger WhatsApp opening without requiring extra permission
+    window.open(waUrl, '_blank');
+  };
+
+  // UPI App redirection for Google Pay, PhonePe, and Paytm
+  const handleOpenUpiApp = (appName: 'gpay' | 'phonepe' | 'paytm') => {
+    const note = encodeURIComponent(`Hari Travels - ${pickup.name.split(',')[0]} to ${destination.name.split(',')[0]}`);
+    const upiId = '9959312174@ybl';
+    const payeeName = encodeURIComponent('Hari Travels Tirupati');
+
+    let targetScheme = '';
+    if (appName === 'gpay') {
+      targetScheme = `gpay://upi/pay?pa=${upiId}&pn=${payeeName}&cu=INR&tn=${note}`;
+    } else if (appName === 'phonepe') {
+      targetScheme = `phonepe://pay?pa=${upiId}&pn=${payeeName}&cu=INR&tn=${note}`;
+    } else if (appName === 'paytm') {
+      targetScheme = `paytmmp://pay?pa=${upiId}&pn=${payeeName}&cu=INR&tn=${note}`;
     }
+
+    // Try app scheme
+    window.location.href = targetScheme;
+
+    // Fallback to standard UPI link if specific app scheme isn't registered on desktop/device
+    setTimeout(() => {
+      const fallbackUrl = `upi://pay?pa=${upiId}&pn=${payeeName}&cu=INR&tn=${note}`;
+      window.location.href = fallbackUrl;
+    }, 1200);
+  };
+
+  const handleCopyUpiId = () => {
+    navigator.clipboard.writeText('9959312174@ybl');
+    setCopiedUpi(true);
+    setTimeout(() => setCopiedUpi(false), 2500);
   };
 
   if (confirmedBooking) {
@@ -305,8 +364,8 @@ export const CabBooking: React.FC<CabBookingProps> = ({
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 md:py-10">
       <div className="bg-white rounded-3xl shadow-sm border border-[#E8DFC8] overflow-hidden">
-        {/* Step Indicator */}
-        <div className="bg-[#FAF7F2] px-6 py-4 border-b border-[#E8DFC8] flex items-center justify-between">
+        {/* Portal Header */}
+        <div className="bg-[#FAF7F2] px-6 py-4 border-b border-[#E8DFC8] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <span className="text-[10px] uppercase font-bold tracking-wider text-[#8C6D28]">
               Reserve Private Transport
@@ -315,29 +374,19 @@ export const CabBooking: React.FC<CabBookingProps> = ({
               Cab Booking & Live Route
             </h2>
           </div>
-          <div className="flex items-center space-x-1 sm:space-x-2 text-xs">
-            {[1, 2, 3, 4].map((step) => (
-              <button
-                key={step}
-                onClick={() => step < currentStep && setCurrentStep(step)}
-                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-bold transition ${
-                  currentStep === step
-                    ? 'bg-[#6B1724] text-white shadow-xs'
-                    : currentStep > step
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-stone-200 text-stone-500'
-                }`}
-              >
-                {currentStep > step ? '✓' : step}
-              </button>
-            ))}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse mr-2"></span>
+              WhatsApp & 24/7 Phone Dispatch
+            </span>
+            <span className="inline-flex items-center px-3 py-1 rounded-full bg-stone-100 border border-stone-200 text-stone-700 text-xs font-semibold">
+              TTD FASTag & Hill Permits
+            </span>
           </div>
         </div>
 
-        <div className="p-6 md:p-8">
-          {/* STEP 1: ROUTE & TRIP TYPE */}
-          {currentStep === 1 && (
-            <div className="space-y-6">
+        <div className="p-4 sm:p-6 md:p-8">
+          <div className="space-y-6">
               {/* Trip type selector */}
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-stone-500 mb-2">
@@ -345,27 +394,25 @@ export const CabBooking: React.FC<CabBookingProps> = ({
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {[
-                    { id: 'hillclimb', label: 'Tirumala Hill Climb', badge: 'Fastag' },
-                    { id: 'oneway', label: 'One Way Drop', badge: null },
-                    { id: 'roundtrip', label: 'Round Trip (Wait & Return)', badge: 'Wait Time' },
-                    { id: 'sightseeing', label: 'Full Day Sightseeing', badge: '8 Hrs' }
+                    { id: 'hillclimb', label: 'Tirumala Hill Climb', badge: 'FASTag' },
+                    { id: 'oneway', label: 'One Way Drop', badge: 'Direct' },
+                    { id: 'roundtrip', label: 'Round Trip (Wait & Return)', badge: 'Wait & Return' },
+                    { id: 'sightseeing', label: 'Full Day Sightseeing', badge: '8 Hours' }
                   ].map((t) => (
                     <button
                       key={t.id}
                       type="button"
                       onClick={() => setTripType(t.id as TripType)}
-                      className={`p-3 rounded-xl text-left border transition text-xs font-medium relative ${
+                      className={`p-2.5 sm:p-3 rounded-xl text-left border transition text-xs relative flex flex-col justify-between min-h-[72px] sm:min-h-[78px] ${
                         tripType === t.id
-                          ? 'border-[#6B1724] bg-[#6B1724]/6 text-[#6B1724] font-bold shadow-xs'
-                          : 'border-stone-200 hover:border-stone-300 text-stone-700'
+                          ? 'border-[#6B1724] bg-[#6B1724]/8 text-[#6B1724] font-bold shadow-xs'
+                          : 'border-stone-200 hover:border-stone-300 text-stone-700 bg-white'
                       }`}
                     >
-                      <span>{t.label}</span>
-                      {t.badge && (
-                        <span className="block text-[9px] uppercase font-bold text-[#8C6D28] mt-0.5">
-                          {t.badge}
-                        </span>
-                      )}
+                      <span className="leading-snug">{t.label}</span>
+                      <span className="text-[9px] uppercase font-bold text-[#8C6D28] tracking-wider mt-1 block">
+                        {t.badge}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -854,437 +901,524 @@ export const CabBooking: React.FC<CabBookingProps> = ({
                 )}
               </div>
 
-              {/* Route distance teaser */}
-              <div className="p-4 bg-[#FAF7F2] rounded-2xl border border-[#E8DFC8] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-xl bg-white border border-[#E8DFC8] flex items-center justify-center text-lg">
-                    🗺️
-                  </div>
+              {/* SCHEDULE, PASSENGERS & PILGRIM DETAILS */}
+              <div className="p-5 sm:p-6 bg-[#FAF7F2] rounded-2xl border border-[#E8DFC8] space-y-4">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-stone-700 flex items-center">
+                  <Calendar className="w-4 h-4 mr-1.5 text-[#6B1724]" />
+                  Schedule & Pilgrim Details
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <h4 className="text-xs font-bold text-stone-900">
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-600 mb-1 flex items-center">
+                      <Calendar className="w-3 h-3 mr-1 text-[#6B1724]" />
+                      Date of Journey
+                    </label>
+                    <input
+                      type="date"
+                      value={travelDate}
+                      onChange={(e) => setTravelDate(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-[#E8DFC8] rounded-xl text-xs font-semibold text-stone-900 focus:outline-none focus:border-[#6B1724]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-600 mb-1 flex items-center">
+                      <Clock className="w-3 h-3 mr-1 text-[#6B1724]" />
+                      Pickup Time
+                    </label>
+                    <select
+                      value={travelTime}
+                      onChange={(e) => setTravelTime(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-[#E8DFC8] rounded-xl text-xs font-semibold text-stone-900 focus:outline-none focus:border-[#6B1724]"
+                    >
+                      {[
+                        '03:30 AM (Suprabhatham Special)',
+                        '04:30 AM (Ghat Gate Opening)',
+                        '06:00 AM',
+                        '07:30 AM',
+                        '09:00 AM',
+                        '10:30 AM',
+                        '12:00 PM',
+                        '02:00 PM',
+                        '04:00 PM',
+                        '06:00 PM',
+                        '08:00 PM',
+                        '10:00 PM'
+                      ].map((t) => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-600 mb-1 flex items-center">
+                      <Users className="w-3 h-3 mr-1 text-[#6B1724]" />
+                      No. of Passengers
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="14"
+                      value={passengers}
+                      onChange={(e) => setPassengers(Math.max(1, Math.min(14, parseInt(e.target.value) || 1)))}
+                      className="w-full px-3 py-2 bg-white border border-[#E8DFC8] rounded-xl text-xs font-semibold text-stone-900 focus:outline-none focus:border-[#6B1724]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-600 mb-1">
+                      Lead Passenger Name (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      maxLength={50}
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value.replace(/[^a-zA-Z\s.']/g, '').slice(0, 50))}
+                      placeholder="Enter full name"
+                      className="w-full px-3 py-2 bg-white border border-[#E8DFC8] rounded-xl text-xs font-medium text-stone-900 focus:outline-none focus:border-[#6B1724]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-600 mb-1">
+                      Contact Mobile (For WhatsApp Dispatch)
+                    </label>
+                    <input
+                      type="tel"
+                      autoComplete="off"
+                      maxLength={15}
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(e.target.value.replace(/[^0-9+ -]/g, '').slice(0, 15))}
+                      placeholder="Enter 10-digit mobile number"
+                      className="w-full px-3 py-2 bg-white border border-[#E8DFC8] rounded-xl text-xs font-medium text-stone-900 focus:outline-none focus:border-[#6B1724]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-600 mb-1">
+                    Special Requests / Luggage Notes
+                  </label>
+                  <input
+                    type="text"
+                    autoComplete="off"
+                    maxLength={200}
+                    value={specialNotes}
+                    onChange={(e) => setSpecialNotes(e.target.value.replace(/[<>{}[\]\\]/g, '').slice(0, 200))}
+                    placeholder="e.g. Elder pilgrims needing gentle ghat driving, airport flight arrival, extra boot luggage..."
+                    className="w-full px-3 py-2 bg-white border border-[#E8DFC8] rounded-xl text-xs font-medium text-stone-900 focus:outline-none focus:border-[#6B1724]"
+                  />
+                </div>
+              </div>
+
+              {/* VEHICLE SELECTION OPTIONS (PROPERLY ALIGNED ON MOBILE AS 2 COLS, DESKTOP 4 COLS) */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold uppercase tracking-wider text-stone-700 flex items-center">
+                    <Car className="w-3.5 h-3.5 mr-1 text-[#6B1724]" />
+                    Select Preferred Cab
+                  </label>
+                  <span className="text-[10px] text-stone-500 font-medium">
+                    TTD Ghat Road Permitted
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+                  {VEHICLE_OPTIONS.map((v) => {
+                    const isSelected = selectedVehicle.id === v.id;
+                    const vFare = calculateFare(v, distanceKm, isGhatRoute, tripType);
+                    return (
+                      <button
+                        key={v.id}
+                        type="button"
+                        onClick={() => setSelectedVehicle(v)}
+                        className={`p-2.5 sm:p-3 rounded-2xl text-left border transition flex flex-col justify-between min-h-[96px] sm:min-h-[105px] relative group cursor-pointer ${
+                          isSelected
+                            ? 'border-[#6B1724] bg-[#6B1724]/8 text-[#6B1724] ring-2 ring-[#6B1724]/30 shadow-xs'
+                            : 'border-[#E8DFC8] bg-white hover:border-stone-400 text-stone-800'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between gap-1 mb-1">
+                            <span className="font-bold text-xs sm:text-sm truncate">
+                              {v.name}
+                            </span>
+                            {isSelected && (
+                              <span className="w-2 h-2 rounded-full bg-[#6B1724] shrink-0" />
+                            )}
+                          </div>
+                          <span className="text-[10px] text-stone-500 block truncate">
+                            {v.passengers} Seats • {v.models.split('/')[0]}
+                          </span>
+                        </div>
+
+                        <div className="mt-2 pt-1.5 border-t border-stone-100 flex items-baseline justify-between">
+                          <span className="text-[9px] uppercase font-bold text-stone-400">Est. Fare</span>
+                          <span className={`text-xs sm:text-sm font-black ${isSelected ? 'text-[#6B1724]' : 'text-stone-900'}`}>
+                            ₹{vFare.totalFare}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* ROUTE DISTANCE & ESTIMATE SUMMARY */}
+              <div className="p-3.5 sm:p-4 bg-amber-50/90 rounded-2xl border border-amber-200/90 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div className="flex items-center space-x-3 min-w-0">
+                  <div className="w-10 h-10 rounded-xl bg-white border border-amber-200 flex items-center justify-center text-lg shrink-0 shadow-xs">
+                    🛣️
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="text-xs font-bold text-amber-950 truncate">
                       {hasValidRoute ? (
-                        <>Calculated Route Distance: <span className="text-[#6B1724]">{distanceKm} km</span></>
+                        <>Calculated Distance: <span className="text-[#6B1724] font-black">{distanceKm} km</span></>
                       ) : (
-                        <span className="text-amber-800">Location incomplete: Select both pickup and destination</span>
+                        <span className="text-amber-800">Please choose pickup & drop</span>
                       )}
                     </h4>
-                    <p className="text-[11px] text-stone-500">
+                    <p className="text-[11px] text-amber-800/90 leading-tight">
                       {hasValidRoute
-                        ? `Estimated travel time: ~${Math.round(distanceKm * 2.2)} mins ${isGhatRoute ? '(includes mandatory Ghat road speed regulation)' : ''}`
-                        : 'Choose a valid landmark or live GPS position for both points to continue'}
+                        ? `Est. travel time: ~${Math.round(distanceKm * 2.2)} mins • FASTag & Ghat Toll Included`
+                        : 'Choose your pickup and destination landmarks or use Live GPS location above'}
                     </p>
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (isNoneLocation(pickup) || pickup.lat === 0) {
-                      setSelectionError('Please choose a valid pickup location or use Live GPS.');
-                      return;
-                    }
-                    if (isNoneLocation(destination) || destination.lat === 0) {
-                      setSelectionError('Please choose a valid destination or use Live GPS.');
-                      return;
-                    }
-                    setSelectionError(null);
-                    setCurrentStep(2);
-                  }}
-                  disabled={!hasValidRoute}
-                  className={`w-full sm:w-auto px-6 py-2.5 rounded-xl text-xs font-bold shadow-xs transition flex items-center justify-center ${
-                    hasValidRoute
-                      ? 'bg-[#6B1724] hover:bg-[#58111A] text-white cursor-pointer'
-                      : 'bg-stone-300 text-stone-500 cursor-not-allowed'
-                  }`}
-                >
-                  Choose Vehicle <ChevronRight className="w-4 h-4 ml-1" />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* STEP 2: CHOOSE VEHICLE */}
-          {currentStep === 2 && (
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-stone-700">
-                  Select Suitable Cab for Your Journey
-                </h3>
-                <span className="text-xs text-stone-500">
-                  Route: {pickup.name.split('(')[0]} → {destination.name.split('(')[0]} ({distanceKm} km)
-                </span>
+                <div className="w-full sm:w-auto flex items-center justify-between sm:justify-end gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-amber-200/60 shrink-0">
+                  <span className="text-xs font-black text-[#6B1724]">
+                    ₹{fareBreakdown.totalFare} total
+                  </span>
+                  <span className="inline-block px-2.5 py-1 bg-white rounded-lg border border-amber-300 text-[10px] font-black text-[#6B1724] uppercase tracking-wide shadow-2xs">
+                    Zero Advance Required
+                  </span>
+                </div>
               </div>
 
-              <div className="space-y-3">
-                {VEHICLE_OPTIONS.map((veh) => {
-                  const fare = calculateFare(veh, distanceKm, isGhatRoute, tripType);
-                  const isSelected = selectedVehicle.id === veh.id;
+              {/* BOOKING & PAYMENT OPTIONS HEADER */}
+              <div className="pt-2 space-y-4">
+                <div className="text-center px-1">
+                  <span className="text-[10px] sm:text-[11px] uppercase font-bold tracking-widest text-[#8C6D28]">
+                    Live Booking & Payment Options
+                  </span>
+                  <h3 className="font-display text-base sm:text-xl font-bold text-[#3B0A11] mt-0.5">
+                    Choose Your Preferred Booking Method
+                  </h3>
+                  <p className="text-[11px] sm:text-xs text-stone-500 max-w-lg mx-auto mt-0.5 leading-relaxed">
+                    Select any option below to instantly reserve your cab with Hari Travels. All rides include verified hill chauffeurs and TTD FASTag clearance.
+                  </p>
+                </div>
 
-                  return (
-                    <div
-                      key={veh.id}
-                      onClick={() => setSelectedVehicle(veh)}
-                      className={`p-4 rounded-2xl border-2 transition cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
-                        isSelected
-                          ? 'border-[#6B1724] bg-[#6B1724]/4 shadow-sm'
-                          : 'border-[#E8DFC8]/60 hover:border-[#6B1724]/40 bg-white'
-                      }`}
-                    >
-                      <div className="flex items-center space-x-4">
-                        <img
-                          src={veh.image}
-                          alt={veh.name}
-                          className="w-20 h-14 sm:w-24 sm:h-16 rounded-xl object-cover border border-[#E8DFC8]"
-                        />
+                {selectionError && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center space-x-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                    <span>{selectionError}</span>
+                  </div>
+                )}
+
+                {/* Driver Pay Auto-Dispatch Notification */}
+                {driverPayNotification && (
+                  <div className="p-3.5 sm:p-4 bg-emerald-50 border-2 border-emerald-500 rounded-2xl text-xs text-emerald-900 shadow-sm animate-fadeIn">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start space-x-2.5">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
                         <div>
-                          <div className="flex items-center space-x-2">
-                            <h4 className="font-bold text-stone-900 text-sm sm:text-base">
-                              {veh.name}
-                            </h4>
-                            {veh.popular && (
-                              <span className="text-[10px] font-bold bg-[#D4AF37] text-[#3B0A11] px-1.5 py-0.5 rounded">
-                                POPULAR
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs text-stone-500 font-medium">{veh.models}</p>
-                          <div className="flex items-center space-x-3 text-[11px] text-stone-600 mt-1">
-                            <span className="flex items-center">
-                              <Users className="w-3 h-3 mr-1 text-stone-400" /> {veh.passengers} Seats
-                            </span>
-                            <span>•</span>
-                            <span>Boot: {veh.luggage} Bags</span>
-                            <span>•</span>
-                            <span className="text-emerald-700 font-semibold">Chilled AC</span>
-                          </div>
+                          <p className="font-bold text-xs sm:text-sm text-emerald-950">
+                            Pickup & Drop Sent to WhatsApp Dispatch!
+                          </p>
+                          <p className="text-emerald-800 mt-0.5 text-[11px] sm:text-xs">
+                            {driverPayNotification}
+                          </p>
+                          <p className="text-[10px] sm:text-[11px] text-emerald-700 mt-1 font-semibold">
+                            ✓ Chauffeur assigned • Pay cash or UPI directly to driver upon arrival.
+                          </p>
                         </div>
                       </div>
+                      <a
+                        href={getWhatsAppBookingUrl()}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="shrink-0 px-2.5 sm:px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] sm:text-[11px] font-bold transition flex items-center gap-1"
+                      >
+                        <Send className="w-3 h-3" />
+                        Open Chat
+                      </a>
+                    </div>
+                  </div>
+                )}
 
-                      <div className="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-0 border-stone-100">
-                        <div className="text-left sm:text-right">
-                          <span className="text-[10px] uppercase font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                            Available Now
-                          </span>
-                          <div className="text-base sm:text-lg font-bold text-[#6B1724] mt-0.5">
-                            Direct Driver Rate
-                          </div>
-                          <span className="text-[10px] text-stone-500">FASTag & Hill Permits Included</span>
+                {/* THE 4 PROPERLY ALIGNED OPTIONS IN MOBILE VIEW */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                  {/* OPTION 1: WhatsApp Booking */}
+                  <a
+                    href={getWhatsAppBookingUrl()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white shadow-sm hover:shadow-md transition border border-emerald-400/40 flex flex-col justify-between min-h-[160px] sm:min-h-[170px] group"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-2.5">
+                        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-white/20 flex items-center justify-center text-white backdrop-blur-xs shadow-inner shrink-0">
+                          <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 fill-white text-emerald-600" />
                         </div>
-                        <button
-                          type="button"
-                          className={`mt-2 px-3.5 py-1.5 text-xs font-bold rounded-xl transition ${
-                            isSelected
-                              ? 'bg-[#6B1724] text-white shadow-xs'
-                              : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
-                          }`}
+                        <span className="px-2.5 py-1 bg-white/20 rounded-full text-[10px] font-bold uppercase tracking-wider text-white">
+                          Option 1 • Instant
+                        </span>
+                      </div>
+                      <h4 className="font-bold text-sm sm:text-base text-white">
+                        Book via WhatsApp
+                      </h4>
+                      <p className="text-[11px] sm:text-xs text-emerald-100 mt-1 leading-relaxed">
+                        Launches WhatsApp with pickup, drop destination, date, and passenger details pre-filled in chat.
+                      </p>
+                    </div>
+
+                    <div className="mt-3.5 pt-2.5 border-t border-emerald-500/40 flex items-center justify-between font-bold text-xs text-white">
+                      <span>Launch WhatsApp Chat</span>
+                      <ChevronRight className="w-4 h-4 text-emerald-200 group-hover:translate-x-1 transition" />
+                    </div>
+                  </a>
+
+                  {/* OPTION 2: Direct Call */}
+                  <a
+                    href="tel:+919959312174"
+                    className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[#6B1724] to-[#450C14] hover:from-[#58111A] hover:to-[#380910] text-white shadow-sm hover:shadow-md transition border border-[#D4AF37]/50 flex flex-col justify-between min-h-[160px] sm:min-h-[170px] group"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-2.5">
+                        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-[#D4AF37]/20 flex items-center justify-center text-[#D4AF37] backdrop-blur-xs shadow-inner border border-[#D4AF37]/30 shrink-0">
+                          <Phone className="w-5 h-5 text-[#D4AF37]" />
+                        </div>
+                        <span className="px-2.5 py-1 bg-[#D4AF37]/20 border border-[#D4AF37]/40 rounded-full text-[10px] font-bold uppercase tracking-wider text-[#D4AF37]">
+                          Option 2 • 24/7 Desk
+                        </span>
+                      </div>
+                      <h4 className="font-bold text-sm sm:text-base text-white">
+                        Call +91 99593 12174
+                      </h4>
+                      <p className="text-[11px] sm:text-xs text-stone-300 mt-1 leading-relaxed">
+                        Direct call to our Tirupati transport dispatch desk for immediate allocation and ghat slot coordination.
+                      </p>
+                    </div>
+
+                    <div className="mt-3.5 pt-2.5 border-t border-[#D4AF37]/20 flex items-center justify-between font-bold text-xs text-[#D4AF37]">
+                      <span>Call Helpline Now</span>
+                      <ChevronRight className="w-4 h-4 text-[#D4AF37] group-hover:translate-x-1 transition" />
+                    </div>
+                  </a>
+
+                  {/* OPTION 3: Pay to Driver (Automatically sends pickup & drop to WhatsApp) */}
+                  <button
+                    type="button"
+                    onClick={handleSelectDriverPay}
+                    className={`p-4 sm:p-5 rounded-2xl text-left shadow-sm hover:shadow-md transition border flex flex-col justify-between min-h-[160px] sm:min-h-[170px] group cursor-pointer ${
+                      selectedPaymentMode === 'driver_pay'
+                        ? 'bg-amber-900/90 text-white border-amber-400 ring-2 ring-amber-400/50'
+                        : 'bg-white text-stone-900 hover:bg-amber-50/40 border-[#E8DFC8]'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-2.5">
+                        <div className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center shadow-inner shrink-0 ${
+                          selectedPaymentMode === 'driver_pay' ? 'bg-amber-500/20 text-[#D4AF37]' : 'bg-amber-100 text-amber-900 border border-amber-200'
+                        }`}>
+                          <Banknote className="w-5 h-5" />
+                        </div>
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                          selectedPaymentMode === 'driver_pay' ? 'bg-amber-400/20 text-amber-200 border border-amber-400/30' : 'bg-amber-100 text-amber-900'
+                        }`}>
+                          Option 3 • Zero Advance
+                        </span>
+                      </div>
+                      <h4 className={`font-bold text-sm sm:text-base ${selectedPaymentMode === 'driver_pay' ? 'text-white' : 'text-stone-900'}`}>
+                        Pay to Driver (Cash on Drop)
+                      </h4>
+                      <p className={`text-[11px] sm:text-xs mt-1 leading-relaxed ${selectedPaymentMode === 'driver_pay' ? 'text-amber-100' : 'text-stone-500'}`}>
+                        Sends pickup and drop destination straight to WhatsApp (+91 99593 12174). Pay directly to chauffeur upon arrival.
+                      </p>
+                    </div>
+
+                    <div className={`mt-3.5 pt-2.5 border-t flex items-center justify-between font-bold text-xs ${
+                      selectedPaymentMode === 'driver_pay' ? 'border-amber-400/30 text-amber-300' : 'border-stone-200 text-[#6B1724]'
+                    }`}>
+                      <span>Select & Send to WhatsApp</span>
+                      <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition" />
+                    </div>
+                  </button>
+
+                  {/* OPTION 4: Pay via UPI / Apps */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedPaymentMode('upi');
+                    }}
+                    className={`p-4 sm:p-5 rounded-2xl text-left shadow-sm hover:shadow-md transition border flex flex-col justify-between min-h-[160px] sm:min-h-[170px] group cursor-pointer ${
+                      selectedPaymentMode === 'upi'
+                        ? 'bg-gradient-to-br from-indigo-950 to-slate-900 text-white border-indigo-400 ring-2 ring-indigo-400/50'
+                        : 'bg-white text-stone-900 hover:bg-indigo-50/30 border-[#E8DFC8]'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-2.5">
+                        <div className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center shadow-inner shrink-0 ${
+                          selectedPaymentMode === 'upi' ? 'bg-indigo-500/20 text-indigo-300' : 'bg-indigo-100 text-indigo-900 border border-indigo-200'
+                        }`}>
+                          <Smartphone className="w-5 h-5" />
+                        </div>
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                          selectedPaymentMode === 'upi' ? 'bg-indigo-400/20 text-indigo-200 border border-indigo-400/30' : 'bg-indigo-100 text-indigo-900'
+                        }`}>
+                          Option 4 • Instant UPI
+                        </span>
+                      </div>
+                      <h4 className={`font-bold text-sm sm:text-base ${selectedPaymentMode === 'upi' ? 'text-white' : 'text-stone-900'}`}>
+                        Pay via UPI
+                      </h4>
+                      <p className={`text-[11px] sm:text-xs mt-1 leading-relaxed ${selectedPaymentMode === 'upi' ? 'text-indigo-100' : 'text-stone-500'}`}>
+                        Direct 1-tap redirect to Google Pay, PhonePe, or Paytm app.
+                      </p>
+                    </div>
+
+                    <div className={`mt-3.5 pt-2.5 border-t flex items-center justify-between font-bold text-xs ${
+                      selectedPaymentMode === 'upi' ? 'border-indigo-400/30 text-indigo-300' : 'border-stone-200 text-[#6B1724]'
+                    }`}>
+                      <span>Open GPay / PhonePe / Paytm</span>
+                      <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition" />
+                    </div>
+                  </button>
+                </div>
+
+                {/* EXPANDED OPTION 4: UPI APPS REDIRECTION SECTION (PROPERLY ALIGNED ON MOBILE) */}
+                {selectedPaymentMode === 'upi' && (
+                  <div className="p-4 sm:p-6 bg-white rounded-2xl sm:rounded-3xl border-2 border-indigo-400 shadow-md animate-fadeIn mt-3.5">
+                    <div className="text-center max-w-md mx-auto mb-4 sm:mb-6">
+                      <span className="text-[10px] uppercase font-black tracking-widest text-indigo-800 bg-indigo-100 px-3 py-1 rounded-full">
+                        Instant UPI Redirection
+                      </span>
+                      <h4 className="text-base sm:text-lg font-bold text-stone-900 font-display mt-2">
+                        Select Your UPI App to Pay
+                      </h4>
+                      <p className="text-[11px] sm:text-xs text-stone-500 mt-1">
+                        Tap any app below to automatically launch your installed payment app.
+                      </p>
+                    </div>
+
+                    {/* 3 UPI APP REDIRECT BUTTONS ALIGNED IN 3-COL ON MOBILE */}
+                    <div className="grid grid-cols-3 gap-2 sm:gap-3.5 mb-4 sm:mb-6">
+                      {/* Google Pay Button */}
+                      <button
+                        type="button"
+                        onClick={() => handleOpenUpiApp('gpay')}
+                        className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-stone-50 hover:bg-blue-50 border-2 border-stone-200 hover:border-blue-500 transition flex flex-col items-center justify-center text-center group cursor-pointer shadow-xs min-h-[92px] sm:min-h-[110px]"
+                      >
+                        <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white shadow-xs flex items-center justify-center p-1.5 sm:p-2 mb-1.5 group-hover:scale-105 transition shrink-0">
+                          <svg viewBox="0 0 48 48" className="w-6 h-6 sm:w-8 sm:h-8">
+                            <path fill="#4285F4" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                            <path fill="#34A853" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                            <path fill="#EA4335" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                          </svg>
+                        </div>
+                        <span className="text-[11px] sm:text-xs font-bold text-stone-900 group-hover:text-blue-600 truncate max-w-full">
+                          Google Pay
+                        </span>
+                        <span className="text-[9px] sm:text-[10px] text-stone-500 hidden sm:block mt-0.5">
+                          Tap to open GPay
+                        </span>
+                      </button>
+
+                      {/* PhonePe Button */}
+                      <button
+                        type="button"
+                        onClick={() => handleOpenUpiApp('phonepe')}
+                        className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-stone-50 hover:bg-purple-50 border-2 border-stone-200 hover:border-purple-600 transition flex flex-col items-center justify-center text-center group cursor-pointer shadow-xs min-h-[92px] sm:min-h-[110px]"
+                      >
+                        <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-[#5f259f] text-white shadow-xs flex items-center justify-center p-1.5 sm:p-2 mb-1.5 group-hover:scale-105 transition font-bold text-sm sm:text-lg font-serif shrink-0">
+                          पे
+                        </div>
+                        <span className="text-[11px] sm:text-xs font-bold text-stone-900 group-hover:text-purple-700 truncate max-w-full">
+                          PhonePe
+                        </span>
+                        <span className="text-[9px] sm:text-[10px] text-stone-500 hidden sm:block mt-0.5">
+                          Tap to open PhonePe
+                        </span>
+                      </button>
+
+                      {/* Paytm Button */}
+                      <button
+                        type="button"
+                        onClick={() => handleOpenUpiApp('paytm')}
+                        className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-stone-50 hover:bg-cyan-50 border-2 border-stone-200 hover:border-cyan-600 transition flex flex-col items-center justify-center text-center group cursor-pointer shadow-xs min-h-[92px] sm:min-h-[110px]"
+                      >
+                        <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-[#002e6e] text-[#00b9f5] shadow-xs flex items-center justify-center p-1 sm:p-1.5 mb-1.5 group-hover:scale-105 transition font-black text-[10px] sm:text-xs tracking-tighter shrink-0">
+                          Paytm
+                        </div>
+                        <span className="text-[11px] sm:text-xs font-bold text-stone-900 group-hover:text-cyan-800 truncate max-w-full">
+                          Paytm
+                        </span>
+                        <span className="text-[9px] sm:text-[10px] text-stone-500 hidden sm:block mt-0.5">
+                          Tap to open Paytm
+                        </span>
+                      </button>
+                    </div>
+
+                    {/* UPI ID & DIRECT CONFIRMATION BOX (PROPERLY ALIGNED ON MOBILE) */}
+                    <div className="p-3.5 sm:p-5 bg-stone-50 rounded-xl sm:rounded-2xl border border-stone-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+                      <div className="space-y-1 text-left w-full sm:w-auto min-w-0">
+                        <span className="text-[10px] uppercase font-bold text-stone-500 tracking-wider">
+                          Verified Merchant UPI ID
+                        </span>
+                        <div className="flex items-center justify-between sm:justify-start gap-2 mt-1 bg-white p-1 sm:p-1.5 rounded-xl border border-stone-200">
+                          <span className="font-mono font-bold text-xs sm:text-base text-stone-900 select-all truncate pl-2">
+                            9959312174@ybl
+                          </span>
+                          <button
+                            type="button"
+                            onClick={handleCopyUpiId}
+                            className="shrink-0 px-2.5 sm:px-3 py-1.5 rounded-lg bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold flex items-center space-x-1.5 transition cursor-pointer"
+                          >
+                            {copiedUpi ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                <span>Copied!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3.5 h-3.5" />
+                                <span>Copy ID</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                        <p className="text-[10px] sm:text-[11px] text-stone-600 pt-0.5">
+                          Account: <strong>Hari Travels Tirupati</strong> • Zero surcharge across all UPI apps.
+                        </p>
+                      </div>
+
+                      <div className="shrink-0 w-full sm:w-auto">
+                        <a
+                          href={`https://wa.me/919959312174?text=${encodeURIComponent(`Hello Hari Travels, I am booking a cab from ${pickup.name} to ${destination.name} (${distanceKm} km on ${travelDate} at ${travelTime}) and have initiated UPI payment to 9959312174@ybl. Please confirm dispatch!`)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center space-x-2 w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
                         >
-                          {isSelected ? 'Selected ✓' : 'Select'}
-                        </button>
+                          <MessageCircle className="w-4 h-4 fill-white text-emerald-600 shrink-0" />
+                          <span>Confirm on WhatsApp</span>
+                          <ExternalLink className="w-3 h-3 text-emerald-200 shrink-0" />
+                        </a>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-
-              <div className="flex justify-between pt-4 border-t border-[#E8DFC8]">
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep(1)}
-                  className="px-4 py-2 text-xs font-semibold text-stone-600 hover:text-stone-900"
-                >
-                  ← Back to Route
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep(3)}
-                  className="px-6 py-2.5 rounded-xl text-xs font-bold bg-[#6B1724] hover:bg-[#58111A] text-white shadow-xs transition flex items-center"
-                >
-                  Schedule & Contact <ChevronRight className="w-4 h-4 ml-1" />
-                </button>
+                  </div>
+                )}
               </div>
             </div>
-          )}
-
-          {/* STEP 3: DATE, TIME & PASSENGER DETAILS */}
-          {currentStep === 3 && (
-            <div className="space-y-6">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-stone-700">
-                When Do You Need the Cab?
-              </h3>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1.5 flex items-center">
-                    <Calendar className="w-3.5 h-3.5 mr-1 text-[#6B1724]" />
-                    Date of Journey
-                  </label>
-                  <input
-                    type="date"
-                    value={travelDate}
-                    onChange={(e) => setTravelDate(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-[#FAF7F2] border border-[#E8DFC8] rounded-xl text-sm font-medium focus:outline-none focus:border-[#6B1724]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1.5 flex items-center">
-                    <Clock className="w-3.5 h-3.5 mr-1 text-[#6B1724]" />
-                    Pickup Time
-                  </label>
-                  <select
-                    value={travelTime}
-                    onChange={(e) => setTravelTime(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-[#FAF7F2] border border-[#E8DFC8] rounded-xl text-sm font-medium focus:outline-none focus:border-[#6B1724]"
-                  >
-                    {[
-                      '04:00 AM (Early Ghat Opening)',
-                      '05:00 AM',
-                      '06:30 AM',
-                      '08:00 AM',
-                      '09:30 AM',
-                      '11:00 AM',
-                      '01:00 PM',
-                      '03:30 PM',
-                      '05:00 PM',
-                      '07:00 PM',
-                      '09:00 PM'
-                    ].map((t) => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1.5 flex items-center">
-                    <Users className="w-3.5 h-3.5 mr-1 text-[#6B1724]" />
-                    No. of Passengers
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max={selectedVehicle.passengers}
-                    value={passengers}
-                    onChange={(e) => setPassengers(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="w-full px-3.5 py-2.5 bg-[#FAF7F2] border border-[#E8DFC8] rounded-xl text-sm font-medium focus:outline-none focus:border-[#6B1724]"
-                  />
-                </div>
-              </div>
-
-              {/* Contact info */}
-              <div className="pt-4 border-t border-[#E8DFC8] space-y-4">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-stone-700">
-                  Passenger Contact Details
-                </h4>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-stone-600 mb-1">
-                      Lead Passenger Name
-                    </label>
-                    <input
-                      type="text"
-                      value={customerName}
-                      onChange={(e) => setCustomerName(e.target.value)}
-                      placeholder="e.g. Ananth Kumar"
-                      className="w-full px-3.5 py-2.5 bg-[#FAF7F2] border border-[#E8DFC8] rounded-xl text-sm font-medium focus:outline-none focus:border-[#6B1724]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-stone-600 mb-1">
-                      Mobile Number (For Driver WhatsApp & SMS)
-                    </label>
-                    <input
-                      type="tel"
-                      value={customerPhone}
-                      onChange={(e) => setCustomerPhone(e.target.value)}
-                      placeholder="+91 98480 XXXXX"
-                      className="w-full px-3.5 py-2.5 bg-[#FAF7F2] border border-[#E8DFC8] rounded-xl text-sm font-medium focus:outline-none focus:border-[#6B1724]"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-stone-600 mb-1">
-                    Special Requests / Flight or Train Number (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={specialNotes}
-                    onChange={(e) => setSpecialNotes(e.target.value)}
-                    placeholder="e.g. Arriving on Vande Bharat Express at 09:15 AM, need luggage help"
-                    className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#E8DFC8] rounded-xl text-xs focus:outline-none focus:border-[#6B1724]"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-between pt-4 border-t border-[#E8DFC8]">
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep(2)}
-                  className="px-4 py-2 text-xs font-semibold text-stone-600 hover:text-stone-900"
-                >
-                  ← Back to Vehicle
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep(4)}
-                  className="px-6 py-2.5 rounded-xl text-xs font-bold bg-[#6B1724] hover:bg-[#58111A] text-white shadow-xs transition flex items-center"
-                >
-                  Review & Confirm <ChevronRight className="w-4 h-4 ml-1" />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* STEP 4: REVIEW & PAYMENT */}
-          {currentStep === 4 && (
-            <div className="space-y-6">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-stone-700">
-                Confirm Booking & Payment Preference
-              </h3>
-
-              {/* Summary card */}
-              <div className="bg-[#FAF7F2] rounded-2xl p-5 border border-[#E8DFC8] space-y-3 text-xs">
-                <div className="flex justify-between pb-3 border-b border-[#E8DFC8]">
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-stone-400">Selected Vehicle</span>
-                    <p className="text-sm font-bold text-stone-900">{selectedVehicle.name}</p>
-                    <p className="text-stone-500">{selectedVehicle.models}</p>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[10px] uppercase font-bold text-stone-400">Date & Time</span>
-                    <p className="text-sm font-bold text-[#6B1724]">{travelDate}</p>
-                    <p className="text-stone-600">{travelTime}</p>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5 text-stone-700">
-                  <div className="flex justify-between">
-                    <span className="text-stone-500">Pickup:</span>
-                    <span className="font-semibold">{pickup.name}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-stone-500">Drop:</span>
-                    <span className="font-semibold">{destination.name}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-stone-500">Passenger Name & Contact:</span>
-                    <span className="font-semibold">{customerName} ({customerPhone})</span>
-                  </div>
-                </div>
-
-                {/* Detailed Inclusions list (No prices) */}
-                <div className="mt-3 pt-3 border-t border-[#E8DFC8] space-y-2 text-xs">
-                  <div className="flex justify-between text-stone-600">
-                    <span>Route Distance & ETA:</span>
-                    <span className="font-semibold text-stone-800">{distanceKm} km (~{Math.round(distanceKm * 2.2)} mins)</span>
-                  </div>
-                  <div className="flex justify-between text-stone-600">
-                    <span>TTD FASTag & Ghat Road Hill Tolls:</span>
-                    <span className="font-semibold text-emerald-700">Pre-Cleared & Included</span>
-                  </div>
-                  <div className="flex justify-between text-stone-600">
-                    <span>Mountain Chauffeur Hill Allowance:</span>
-                    <span className="font-semibold text-emerald-700">Included</span>
-                  </div>
-                  <div className="flex justify-between text-stone-600">
-                    <span>Payment Terms:</span>
-                    <span className="font-semibold text-[#6B1724]">Direct Driver Rate • Pay on Pickup / UPI</span>
-                  </div>
-                  <div className="flex justify-between items-center text-xs font-bold text-[#3B0A11] pt-2 border-t border-[#E8DFC8]">
-                    <span>Immediate Phone / WhatsApp Assistance:</span>
-                    <a href="tel:+919959312174" className="font-mono text-[#6B1724] hover:underline flex items-center">
-                      <Phone className="w-3.5 h-3.5 mr-1" />
-                      +91 99593 12174
-                    </a>
-                  </div>
-                </div>
-              </div>
-
-              {/* Payment Methods */}
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-2">
-                  Select Payment Preference
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {[
-                    { id: 'cash', label: 'Pay at Pickup / Drop', icon: Shield, desc: 'Pay driver directly in cash' },
-                    { id: 'upi', label: 'UPI / QR Code', icon: QrCode, desc: 'GPay, PhonePe, Paytm on arrival' },
-                    { id: 'card', label: 'Credit / Debit Card', icon: CreditCard, desc: 'Driver card terminal' }
-                  ].map((pm) => (
-                    <button
-                      key={pm.id}
-                      type="button"
-                      onClick={() => setPaymentMethod(pm.id as any)}
-                      className={`p-3.5 rounded-2xl border text-left transition ${
-                        paymentMethod === pm.id
-                          ? 'border-[#6B1724] bg-[#6B1724]/5 shadow-xs'
-                          : 'border-[#E8DFC8] hover:border-stone-400 bg-white'
-                      }`}
-                    >
-                      <pm.icon className={`w-5 h-5 mb-1.5 ${paymentMethod === pm.id ? 'text-[#6B1724]' : 'text-stone-400'}`} />
-                      <div className="font-bold text-xs text-stone-900">{pm.label}</div>
-                      <div className="text-[10px] text-stone-500">{pm.desc}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="p-3.5 bg-amber-50/70 rounded-2xl border border-amber-200 text-xs text-amber-950 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div className="flex items-center space-x-2">
-                  <span className="text-base">💬</span>
-                  <span className="text-[11px] font-medium">Need instant custom quotes or special package pricing?</span>
-                </div>
-                <a
-                  href="https://wa.me/919959312174?text=Hello%20Hari%20Travels,%20I%20want%20to%20confirm%20cab%20rates"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-bold text-emerald-700 hover:underline inline-flex items-center text-[11px] shrink-0"
-                >
-                  <MessageCircle className="w-3.5 h-3.5 mr-1 text-emerald-600" />
-                  Chat on WhatsApp (+91 99593 12174)
-                </a>
-              </div>
-
-              <div className="flex justify-between items-center pt-4 border-t border-[#E8DFC8]">
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep(3)}
-                  className="px-4 py-2 text-xs font-semibold text-stone-600 hover:text-stone-900"
-                >
-                  ← Back to Schedule
-                </button>
-                <button
-                  type="button"
-                  disabled={isProcessing}
-                  onClick={handleConfirmAndPay}
-                  className="px-8 py-3.5 rounded-xl font-bold text-sm bg-gradient-to-r from-[#6B1724] to-[#7D1B2A] text-white shadow-md hover:shadow-lg transition flex items-center border border-[#D4AF37]/30 disabled:opacity-50"
-                >
-                  {isProcessing ? (
-                    <span>Assigning Chauffeur...</span>
-                  ) : (
-                    <>
-                      Confirm & Reserve Cab
-                      <Sparkles className="w-4 h-4 ml-2 text-[#D4AF37]" />
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
-
-      {/* Radar Matching Animation Modal */}
-      {isSearchingRadar && (
-        <RadarMatchingModal
-          pickupName={pickup.name}
-          vehicle={selectedVehicle}
-          onDriverMatched={handleDriverMatched}
-          onCancel={() => setIsSearchingRadar(false)}
-        />
-      )}
     </div>
   );
 };

@@ -5,7 +5,6 @@ import { CabBooking } from './components/CabBooking';
 import { LiveTrackingScreen } from './components/LiveTrackingScreen';
 import { ToursSection } from './components/ToursSection';
 import { DestinationsSection } from './components/DestinationsSection';
-import { DriverApp } from './components/DriverApp';
 import { FeaturesTrust } from './components/FeaturesTrust';
 import { Footer } from './components/Footer';
 import { 
@@ -138,36 +137,25 @@ export default function App() {
         {activeTab === 'destinations' && (
           <DestinationsSection onBookCabToDestination={handleBookCabToDestination} />
         )}
-
-        {activeTab === 'driver-app' && (
-          <DriverApp
-            currentBooking={activeBooking}
-            onUpdateBookingStatus={(status) => {
-              if (activeBooking) {
-                setActiveBooking({ ...activeBooking, status });
-              }
-            }}
-          />
-        )}
       </main>
 
       {/* Persistent Footer */}
       <Footer setActiveTab={setActiveTab} />
 
-      {/* Floating 24/7 WhatsApp & Direct Call Support Widget */}
-      <div className="fixed bottom-5 right-5 z-50 flex flex-col sm:flex-row items-end sm:items-center gap-2.5">
+      {/* Floating 24/7 WhatsApp & Direct Call Support Widget - Positioned cleanly above mobile bottom bar */}
+      <div className="fixed bottom-16 sm:bottom-5 right-3 sm:right-5 z-40 flex flex-col sm:flex-row items-end sm:items-center gap-2">
         <a
           href="https://wa.me/919959312174?text=Hello%20Hari%20Travels%2C%20I%20would%20like%20to%20inquire%20about%20a%20cab%20%2F%20temple%20tour%20in%20Tirupati."
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-full shadow-xl transition transform hover:scale-105 border border-emerald-400/40 text-xs font-bold"
+          className="flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-full shadow-xl transition transform hover:scale-105 border border-emerald-400/40 text-xs font-bold"
         >
           <MessageCircle className="w-4 h-4 fill-white text-emerald-600" />
           <span>WhatsApp Us</span>
         </a>
         <a
           href="tel:+919959312174"
-          className="flex items-center space-x-2 bg-[#6B1724] hover:bg-[#52111b] text-[#D4AF37] px-4 py-2.5 rounded-full shadow-xl transition transform hover:scale-105 border border-[#D4AF37]/50 text-xs font-bold"
+          className="hidden sm:flex items-center space-x-2 bg-[#6B1724] hover:bg-[#52111b] text-[#D4AF37] px-4 py-2.5 rounded-full shadow-xl transition transform hover:scale-105 border border-[#D4AF37]/50 text-xs font-bold"
         >
           <Phone className="w-4 h-4 text-[#D4AF37]" />
           <span>+91 99593 12174</span>

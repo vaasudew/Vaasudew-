@@ -32,7 +32,6 @@ import { RideBooking, ChatMessage, LocationPoint } from '../types/travel';
 import { InteractiveMap } from './InteractiveMap';
 import { SpeedometerGauge } from './SpeedometerGauge';
 import { SosModal } from './SosModal';
-import { TripCompletionModal } from './TripCompletionModal';
 import { 
   TIRUPATI_TIRUMALA_PRESET, 
   CITY_ROUTE_PRESETS, 
@@ -94,10 +93,30 @@ export const LiveTrackingScreen: React.FC<LiveTrackingScreenProps> = ({
   const [isCalling, setIsCalling] = useState<boolean>(false);
   const [callDuration, setCallDuration] = useState<number>(0);
   const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
-  const [isTripCompleteModalOpen, setIsTripCompleteModalOpen] = useState<boolean>(false);
   const [copiedShare, setCopiedShare] = useState(false);
 
-  // Chat messages
+  // Driver GPS coordinates along the active preset waypoints
+  const waypoints = selectedCityPreset.waypoints;
+  const [driverCoord, setDriverCoord] = useState<{ lat: number; lng: number }>({
+    lat: waypoints[0]?.lat || booking.pickup.lat,
+    lng: waypoints[0]?.lng || booking.pickup.lng
+  });
+
+  // Animation and booking reference synchronization to prevent setState-in-render issues
+  const currentWaypointIndexRef = useRef(0);
+  const subStepProgressRef = useRef(0);
+  const isSimulatingRef = useRef(isSimulating);
+  isSimulatingRef.current = isSimulating;
+  const bookingRef = useRef(booking);
+  bookingRef.current = booking;
+  const onUpdateBookingRef = useRef(onUpdateBooking);
+  onUpdateBookingRef.current = onUpdateBooking;
+  const waypointsRef = useRef(waypoints);
+  waypointsRef.current = waypoints;
+  const simulationSpeedRef = useRef(simulationSpeed);
+  simulationSpeedRef.current = simulationSpeed;
+  const selectedCityPresetRef = useRef(selectedCityPreset);
+  selectedCityPresetRef.current = selectedCityPreset;
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     {
       id: 'm1',
@@ -114,12 +133,15 @@ export const LiveTrackingScreen: React.FC<LiveTrackingScreenProps> = ({
   ]);
   const [inputMessage, setInputMessage] = useState('');
 
-  // Driver GPS coordinates along the active preset waypoints
-  const waypoints = selectedCityPreset.waypoints;
-  const [driverCoord, setDriverCoord] = useState<{ lat: number; lng: number }>({
-    lat: waypoints[0]?.lat || booking.pickup.lat,
-    lng: waypoints[0]?.lng || booking.pickup.lng
-  });
+  // Sync latest refs
+  useEffect(() => {
+    isSimulatingRef.current = isSimulating;
+    bookingRef.current = booking;
+    onUpdateBookingRef.current = onUpdateBooking;
+    waypointsRef.current = waypoints;
+    simulationSpeedRef.current = simulationSpeed;
+    selectedCityPresetRef.current = selectedCityPreset;
+  }, [isSimulating, booking, onUpdateBooking, waypoints, simulationSpeed, selectedCityPreset]);
 
   // Handle Real Device Browser Geolocation Toggle
   const toggleBrowserGps = () => {
@@ -193,62 +215,66 @@ export const LiveTrackingScreen: React.FC<LiveTrackingScreenProps> = ({
     const tickIntervalMs = Math.round(1000 / simulationSpeed);
 
     const timer = setInterval(() => {
-      setSubStepProgress((prevProgress) => {
-        const nextProgress = prevProgress + 0.08 * simulationSpeed;
+      if (!isSimulatingRef.current) return;
 
-        if (nextProgress >= 1) {
-          // Advance to next waypoint
-          setCurrentWaypointIndex((prevIdx) => {
-            const nextIdx = prevIdx + 1;
-            if (nextIdx >= waypoints.length - 1) {
-              // Reached final destination!
-              setDistanceRemainingKm(0);
-              setEtaSecondsRemaining(0);
-              setCurrentSpeedKmh(0);
-              setIsSimulating(false);
-              setIsTripCompleteModalOpen(true);
-              onUpdateBooking({
-                ...booking,
-                status: 'completed'
-              });
-              return waypoints.length - 1;
-            }
-            return nextIdx;
-          });
-          return 0;
+      const currentWaypoints = waypointsRef.current;
+      const speedMultiplier = simulationSpeedRef.current;
+      let progress = subStepProgressRef.current + 0.08 * speedMultiplier;
+      let wpIdx = currentWaypointIndexRef.current;
+
+      if (progress >= 1) {
+        progress = 0;
+        wpIdx += 1;
+
+        if (wpIdx >= currentWaypoints.length - 1) {
+          wpIdx = currentWaypoints.length - 1;
+          currentWaypointIndexRef.current = wpIdx;
+          subStepProgressRef.current = 0;
+          setCurrentWaypointIndex(wpIdx);
+          setSubStepProgress(0);
+          setDistanceRemainingKm(0);
+          setEtaSecondsRemaining(0);
+          setCurrentSpeedKmh(0);
+          setIsSimulating(false);
+          return;
         }
 
-        // Interpolate position between current waypoint and next waypoint
-        const wpA = waypoints[currentWaypointIndex] || waypoints[0];
-        const wpB = waypoints[Math.min(waypoints.length - 1, currentWaypointIndex + 1)] || wpA;
+        currentWaypointIndexRef.current = wpIdx;
+        setCurrentWaypointIndex(wpIdx);
+      }
 
-        const currentLat = wpA.lat + (wpB.lat - wpA.lat) * nextProgress;
-        const currentLng = wpA.lng + (wpB.lng - wpA.lng) * nextProgress;
+      subStepProgressRef.current = progress;
+      setSubStepProgress(progress);
 
-        setDriverCoord({ lat: currentLat, lng: currentLng });
+      // Interpolate position between current waypoint and next waypoint
+      const wpA = currentWaypoints[wpIdx] || currentWaypoints[0];
+      const wpB = currentWaypoints[Math.min(currentWaypoints.length - 1, wpIdx + 1)] || wpA;
 
-        // Calculate dynamic bearing/heading
-        const heading = calculateBearing(wpA.lat, wpA.lng, wpB.lat, wpB.lng);
-        setDriverHeading(heading);
+      const currentLat = wpA.lat + (wpB.lat - wpA.lat) * progress;
+      const currentLng = wpA.lng + (wpB.lng - wpA.lng) * progress;
 
-        // Calculate realistic speed fluctuations
-        const baseSpeed = wpA.speedLimitKmh || 35;
-        const speedNoise = Math.sin(Date.now() / 800) * 4;
-        setCurrentSpeedKmh(Math.max(18, Math.min(baseSpeed + speedNoise, 65)));
+      setDriverCoord({ lat: currentLat, lng: currentLng });
 
-        // Update Remaining Distance and ETA Countdown
-        const remainingWaypointsCount = waypoints.length - 1 - currentWaypointIndex - nextProgress;
-        const approxDistRemaining = Math.max(0, +(remainingWaypointsCount * (selectedCityPreset.distanceKm / waypoints.length)).toFixed(1));
-        setDistanceRemainingKm(approxDistRemaining);
+      // Calculate dynamic bearing/heading
+      const heading = calculateBearing(wpA.lat, wpA.lng, wpB.lat, wpB.lng);
+      setDriverHeading(heading);
 
-        setEtaSecondsRemaining((prevSec) => Math.max(0, prevSec - Math.round(1.5 * simulationSpeed)));
+      // Calculate realistic speed fluctuations
+      const baseSpeed = wpA.speedLimitKmh || 35;
+      const speedNoise = Math.sin(Date.now() / 800) * 4;
+      setCurrentSpeedKmh(Math.max(18, Math.min(baseSpeed + speedNoise, 65)));
 
-        return nextProgress;
-      });
+      // Update Remaining Distance and ETA Countdown
+      const preset = selectedCityPresetRef.current;
+      const remainingWaypointsCount = currentWaypoints.length - 1 - wpIdx - progress;
+      const approxDistRemaining = Math.max(0, +(remainingWaypointsCount * (preset.distanceKm / currentWaypoints.length)).toFixed(1));
+      setDistanceRemainingKm(approxDistRemaining);
+
+      setEtaSecondsRemaining((prevSec) => Math.max(0, prevSec - Math.round(1.5 * speedMultiplier)));
     }, tickIntervalMs);
 
     return () => clearInterval(timer);
-  }, [isSimulating, simulationSpeed, currentWaypointIndex, waypoints, selectedCityPreset]);
+  }, [isSimulating, simulationSpeed]);
 
   // Simulated Phone Call Timer
   useEffect(() => {
@@ -266,6 +292,8 @@ export const LiveTrackingScreen: React.FC<LiveTrackingScreenProps> = ({
   // Handle City Preset Switch
   const handleCityChange = (preset: CityRoutePreset) => {
     setSelectedCityPreset(preset);
+    currentWaypointIndexRef.current = 0;
+    subStepProgressRef.current = 0;
     setCurrentWaypointIndex(0);
     setSubStepProgress(0);
     setDistanceRemainingKm(preset.distanceKm);
@@ -273,8 +301,8 @@ export const LiveTrackingScreen: React.FC<LiveTrackingScreenProps> = ({
     setDriverCoord({ lat: preset.waypoints[0].lat, lng: preset.waypoints[0].lng });
     setIsSimulating(true);
 
-    onUpdateBooking({
-      ...booking,
+    onUpdateBookingRef.current({
+      ...bookingRef.current,
       pickup: {
         name: preset.pickupDefault.name,
         address: preset.pickupDefault.address,
@@ -555,8 +583,16 @@ export const LiveTrackingScreen: React.FC<LiveTrackingScreenProps> = ({
               wanderingCabs={wanderingCabs}
               liveGpsPosition={browserGpsPosition}
               isDraggable={true}
-              onPickupChange={(p) => onUpdateBooking({ ...booking, pickup: p })}
-              onDestinationChange={(d) => onUpdateBooking({ ...booking, destination: d })}
+              onPickupChange={(p) => {
+                setTimeout(() => {
+                  onUpdateBookingRef.current({ ...bookingRef.current, pickup: p });
+                }, 0);
+              }}
+              onDestinationChange={(d) => {
+                setTimeout(() => {
+                  onUpdateBookingRef.current({ ...bookingRef.current, destination: d });
+                }, 0);
+              }}
               className="h-[440px] md:h-[500px] w-full rounded-2xl"
             />
           </div>
@@ -570,22 +606,31 @@ export const LiveTrackingScreen: React.FC<LiveTrackingScreenProps> = ({
               isGhatRoad={selectedCityPreset.id === 'tirupati-tirumala'}
             />
 
-            {/* Quick Test / Trigger Completion Early Button */}
-            <div className="bg-white p-3.5 rounded-2xl border border-[#E8DFC8] shadow-sm flex items-center justify-between">
+            {/* Live 24/7 Road & Driver Support */}
+            <div className="bg-white p-4 rounded-2xl border border-[#E8DFC8] shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
               <div>
-                <span className="text-[10px] uppercase font-bold text-stone-400">Simulation Control</span>
-                <h4 className="text-xs font-bold text-stone-900 mt-0.5">Test Trip Completion</h4>
-                <p className="text-[11px] text-stone-500">Opens fare receipt, 5-star ratings & compliments modal.</p>
+                <span className="text-[10px] uppercase font-bold text-[#8C6D28] tracking-wider">Live Chauffeur Support</span>
+                <h4 className="text-xs font-bold text-stone-900 mt-0.5">Need Route Assistance or Luggage Help?</h4>
+                <p className="text-[11px] text-stone-500">Contact Hari Travels dispatch desk 24/7 or message your hill driver directly.</p>
               </div>
-              <button
-                onClick={() => {
-                  setIsSimulating(false);
-                  setIsTripCompleteModalOpen(true);
-                }}
-                className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition"
-              >
-                Arrive Now
-              </button>
+              <div className="grid grid-cols-2 sm:flex items-center gap-2 shrink-0 w-full sm:w-auto">
+                <a
+                  href="tel:+919959312174"
+                  className="px-3.5 py-2.5 rounded-xl bg-[#6B1724] hover:bg-[#58111A] text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-1.5"
+                >
+                  <Phone className="w-3.5 h-3.5 text-[#D4AF37]" />
+                  <span>Call Dispatch</span>
+                </a>
+                <a
+                  href="https://wa.me/919959312174"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-1.5"
+                >
+                  <MessageCircle className="w-3.5 h-3.5" />
+                  <span>WhatsApp</span>
+                </a>
+              </div>
             </div>
           </div>
         </div>
@@ -780,31 +825,6 @@ export const LiveTrackingScreen: React.FC<LiveTrackingScreenProps> = ({
           driverName={booking.driver?.name}
           vehiclePlate={booking.driver?.vehicleNumber}
           onClose={() => setIsSosOpen(false)}
-        />
-      )}
-
-      {/* Trip Completion Modal */}
-      {isTripCompleteModalOpen && (
-        <TripCompletionModal
-          booking={{
-            ...booking,
-            otp: rideOtp
-          }}
-          onClose={() => {
-            setIsTripCompleteModalOpen(false);
-            onBackToHome();
-          }}
-          onBookReturn={() => {
-            setIsTripCompleteModalOpen(false);
-            // Reverse pickup & drop for return trip
-            onUpdateBooking({
-              ...booking,
-              pickup: booking.destination,
-              destination: booking.pickup,
-              status: 'driver_coming'
-            });
-            resetSimulation();
-          }}
         />
       )}
 

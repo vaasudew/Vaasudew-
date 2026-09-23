@@ -41,12 +41,12 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <>
       {/* Top Banner: Respectful Trust & 24/7 Helpline & WhatsApp */}
-      <header className="bg-[#58111A] text-[#F8F3EA] text-xs py-2 px-4 border-b border-[#7D1B2A]/40">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-0">
-          <div className="flex items-center space-x-2 sm:space-x-3 text-[11px] sm:text-xs">
-            <span className="inline-flex items-center text-[#D4AF37] font-semibold">
-              <ShieldCheck className="w-3.5 h-3.5 mr-1 text-[#D4AF37]" />
-              Tirupati & Tirumala Travel Service
+      <header className="bg-[#58111A] text-[#F8F3EA] text-xs py-1.5 sm:py-2 px-3 sm:px-4 border-b border-[#7D1B2A]/40">
+        <div className="max-w-7xl mx-auto flex flex-row justify-between items-center gap-2">
+          <div className="flex items-center space-x-1.5 sm:space-x-3 text-[10px] sm:text-xs min-w-0">
+            <span className="inline-flex items-center text-[#D4AF37] font-semibold truncate">
+              <ShieldCheck className="w-3.5 h-3.5 mr-1 text-[#D4AF37] shrink-0" />
+              <span className="truncate">Tirupati & Tirumala Travel Service</span>
             </span>
             <span className="hidden md:inline text-[#E6DFD1]/50">•</span>
             <span className="hidden md:inline text-[#E6DFD1]/90">
@@ -54,20 +54,20 @@ export const Navbar: React.FC<NavbarProps> = ({
             </span>
           </div>
 
-          <div className="flex items-center space-x-3 sm:space-x-4 text-xs">
+          <div className="flex items-center space-x-2 sm:space-x-4 text-xs shrink-0">
             <a 
               href="tel:+919959312174" 
-              className="text-[#E6DFD1] hover:text-[#D4AF37] transition flex items-center font-bold font-mono text-[11px] sm:text-xs"
+              className="text-[#E6DFD1] hover:text-[#D4AF37] transition flex items-center font-bold font-mono text-[10px] sm:text-xs"
             >
-              <Phone className="w-3.5 h-3.5 mr-1 text-[#D4AF37]" />
+              <Phone className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1 text-[#D4AF37]" />
               +91 99593 12174
             </a>
-            <span className="text-[#D4AF37]/50">|</span>
+            <span className="text-[#D4AF37]/50 hidden sm:inline">|</span>
             <a 
               href="https://wa.me/919959312174?text=Hello%20Hari%20Travels%2C%20I%20want%20to%20book%20a%20cab%20in%20Tirupati%20%2F%20Tirumala." 
               target="_blank" 
               rel="noopener noreferrer"
-              className="inline-flex items-center text-white bg-[#25D366] hover:bg-[#1EBE5D] px-2.5 py-0.5 rounded-full text-[11px] font-bold shadow-xs transition"
+              className="hidden sm:inline-flex items-center text-white bg-[#25D366] hover:bg-[#1EBE5D] px-2.5 py-0.5 rounded-full text-[11px] font-bold shadow-xs transition"
             >
               <MessageCircle className="w-3 h-3 mr-1 fill-white text-transparent" />
               WhatsApp
@@ -78,22 +78,22 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Main Navigation Bar */}
       <nav className="sticky top-0 z-40 bg-[#FAF7F2]/95 backdrop-blur-md border-b border-[#E8DFC8]/60 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            {/* Logo */}
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16 sm:h-20">
+            {/* Logo & Website Title */}
             <div 
               onClick={() => { setActiveTab('home'); }} 
-              className="flex items-center space-x-3 cursor-pointer group"
+              className="flex items-center space-x-2.5 sm:space-x-3 cursor-pointer group shrink-0"
             >
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#6B1724] to-[#450A12] flex items-center justify-center text-[#D4AF37] shadow-sm border border-[#D4AF37]/30 group-hover:scale-105 transition">
-                <Compass className="w-6 h-6 stroke-[1.75]" />
+              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-[#6B1724] to-[#450A12] flex items-center justify-center text-[#D4AF37] shadow-sm border border-[#D4AF37]/30 group-hover:scale-105 transition shrink-0">
+                <Compass className="w-5 h-5 sm:w-6 sm:h-6 stroke-[1.75]" />
               </div>
-              <div className="flex flex-col">
-                <span className="font-display text-2xl font-bold tracking-wider text-[#3B0A11] flex items-center gap-1.5">
+              <div className="flex flex-col justify-center">
+                <span className="font-display text-lg sm:text-2xl font-bold tracking-wider text-[#3B0A11] flex items-center gap-1 sm:gap-1.5 leading-none whitespace-nowrap">
                   HARI TRAVELS
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#C59B27]"></span>
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#C59B27] shrink-0"></span>
                 </span>
-                <span className="text-[11px] tracking-[0.2em] uppercase font-semibold text-[#8C6D28]">
+                <span className="text-[9px] sm:text-[11px] tracking-[0.18em] sm:tracking-[0.2em] uppercase font-semibold text-[#8C6D28] leading-tight mt-0.5 sm:mt-1 whitespace-nowrap">
                   Tirupati • Tirumala
                 </span>
               </div>
@@ -148,28 +148,29 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             </div>
 
-            {/* Mobile Menu Button */}
-            <div className="flex items-center lg:hidden space-x-2">
+            {/* Mobile Menu Button & Quick Actions */}
+            <div className="flex items-center lg:hidden space-x-1.5 sm:space-x-2 shrink-0">
               <a
                 href="https://wa.me/919959312174?text=Hello%20Hari%20Travels%2C%20I%20would%20like%20to%20book%20a%20cab%20in%20Tirupati%20%2F%20Tirumala."
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-2.5 py-1.5 text-xs font-bold bg-[#25D366] text-white rounded-lg flex items-center"
+                className="p-1.5 sm:px-2.5 sm:py-1.5 text-xs font-bold bg-[#25D366] text-white rounded-lg flex items-center justify-center shadow-xs"
+                title="WhatsApp Us"
               >
-                <MessageCircle className="w-3.5 h-3.5" />
+                <MessageCircle className="w-4 h-4 fill-white text-emerald-600" />
               </a>
               <button
                 onClick={onOpenBooking}
-                className="px-3 py-1.5 text-xs font-semibold bg-[#6B1724] text-white rounded-lg"
+                className="px-2.5 sm:px-3 py-1.5 text-xs font-bold bg-[#6B1724] text-white rounded-lg shadow-xs"
               >
                 Book
               </button>
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2 rounded-lg text-[#4A453E] hover:bg-[#6B1724]/10"
+                className="p-1.5 sm:p-2 rounded-lg text-[#4A453E] hover:bg-[#6B1724]/10 transition"
                 aria-label="Toggle menu"
               >
-                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                {mobileMenuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
               </button>
             </div>
           </div>

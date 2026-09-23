@@ -110,25 +110,25 @@ export const Hero: React.FC<HeroProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center">
           {/* Left Column: Core Positioning, Temple Identity & Direct Contact */}
-          <div className="lg:col-span-7 space-y-6 text-left">
+          <div className="lg:col-span-7 space-y-5 sm:space-y-6 text-left">
             <div className="flex flex-wrap items-center gap-2">
-              <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-[#6B1724]/90 backdrop-blur-md border border-[#D4AF37]/50 text-[#F5EDDC] text-xs font-semibold shadow-xs">
+              <div className="inline-flex items-center space-x-1.5 sm:space-x-2 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-[#6B1724]/90 backdrop-blur-md border border-[#D4AF37]/50 text-[#F5EDDC] text-[11px] sm:text-xs font-semibold shadow-xs">
                 <span className="w-2 h-2 rounded-full bg-[#D4AF37] animate-pulse"></span>
                 <span>Tirumala Hills & Tirupati Private Cabs</span>
               </div>
-              <span className="inline-flex items-center text-xs font-bold text-[#6B1724] bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full border border-[#E8DFC8] shadow-xs">
+              <span className="inline-flex items-center text-[11px] sm:text-xs font-bold text-[#6B1724] bg-white/90 backdrop-blur-md px-3 py-1 sm:py-1.5 rounded-full border border-[#E8DFC8] shadow-xs">
                 <ShieldCheck className="w-3.5 h-3.5 mr-1 text-[#8C6D28]" />
                 Hill Certified Chauffeurs
               </span>
             </div>
 
-            <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[#24211D] leading-[1.12]">
+            <h1 className="font-display text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[#24211D] leading-[1.15] sm:leading-[1.12]">
               Sacred Tirupati Journey.{' '}
               <span className="block text-[#6B1724]">Track Your Cab Live.</span>
-              <span className="block text-[#8C6D28] font-normal italic font-serif">Tirumala Hill Pilgrimage.</span>
+              <span className="block text-[#8C6D28] font-normal italic font-serif text-2xl sm:text-4xl lg:text-5xl mt-1">Tirumala Hill Pilgrimage.</span>
             </h1>
 
-            <p className="text-base sm:text-lg text-stone-700 max-w-xl leading-relaxed font-medium">
+            <p className="text-sm sm:text-lg text-stone-700 max-w-xl leading-relaxed font-medium">
               A serene, respectful travel experience for pilgrims and families. Instant private cab reservations with real-time GPS tracking, 24/7 dedicated support, and verified Ghat road chauffeurs.
             </p>
 
@@ -153,7 +153,7 @@ export const Hero: React.FC<HeroProps> = ({
                   Call Now
                 </a>
                 <a
-                  href="https://wa.me/919959312174?text=Hello%20Hari%20Travels,%20I%20would%20like%20to%20book%20a%20cab%20in%20Tirupati%20/%20Tirumala"
+                  href="https://wa.me/919959312174?text=Hello%20Hari%20Travels%2C%20I%20would%20like%20to%20book%20a%20cab%20in%20Tirupati%20%2F%20Tirumala."
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-[#25D366] hover:bg-[#1EBE5D] text-white text-xs font-bold transition flex items-center justify-center shadow-xs"

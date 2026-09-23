@@ -3,7 +3,7 @@ import {
   Compass, 
   MapPin, 
   Phone, 
-  Mail, 
+  MessageCircle, 
   ShieldCheck, 
   Car, 
   Navigation,
@@ -22,15 +22,15 @@ export const Footer: React.FC<FooterProps> = ({ setActiveTab }) => {
           {/* Brand Col */}
           <div className="lg:col-span-4 space-y-4">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6B1724] to-[#450A12] flex items-center justify-center text-[#D4AF37] border border-[#D4AF37]/40 shadow-xs">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6B1724] to-[#450A12] flex items-center justify-center text-[#D4AF37] border border-[#D4AF37]/40 shadow-xs shrink-0">
                 <Compass className="w-5 h-5" />
               </div>
-              <div>
-                <span className="font-display text-xl font-bold tracking-wider text-white flex items-center gap-1.5">
+              <div className="flex flex-col justify-center">
+                <span className="font-display text-xl font-bold tracking-wider text-white flex items-center gap-1.5 leading-none">
                   HARI TRAVELS
                   <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#D4AF37]"></span>
                 </span>
-                <span className="text-[10px] tracking-[0.2em] uppercase font-semibold text-[#D4AF37] block">
+                <span className="text-[10px] tracking-[0.2em] uppercase font-semibold text-[#D4AF37] block mt-1">
                   Tirupati • Tirumala
                 </span>
               </div>
@@ -40,15 +40,16 @@ export const Footer: React.FC<FooterProps> = ({ setActiveTab }) => {
               Premium Tirupati and Tirumala travel platform combining instant cab booking, live GPS tracking, and temple-focused tours. Providing safe, respectful, and punctual journeys for pilgrims and families.
             </p>
 
-            <div className="space-y-2 text-xs text-stone-300 pt-2">
-              <div className="flex items-center space-x-2">
-                <Phone className="w-3.5 h-3.5 text-[#D4AF37]" />
-                <a href="tel:+919959312174" className="hover:text-white transition">
-                  24/7 Helpline: <span className="font-mono font-bold text-white">+91 99593 12174</span>
+            <div className="space-y-2.5 text-xs text-stone-300 pt-2">
+              <div className="flex items-center space-x-2.5">
+                <Phone className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
+                <a href="tel:+919959312174" className="hover:text-white transition flex items-center gap-1.5">
+                  <span>24/7 Helpline:</span>
+                  <span className="font-mono font-bold text-white">+91 99593 12174</span>
                 </a>
               </div>
-              <div className="flex items-center space-x-2">
-                <span className="w-3.5 h-3.5 flex items-center justify-center text-[#25D366] font-bold">💬</span>
+              <div className="flex items-center space-x-2.5">
+                <MessageCircle className="w-3.5 h-3.5 text-[#25D366] shrink-0" />
                 <a 
                   href="https://wa.me/919959312174?text=Hello%20Hari%20Travels%2C%20I%20want%20to%20inquire%20about%20a%20cab%20and%20temple%20package%20in%20Tirupati." 
                   target="_blank" 
@@ -58,13 +59,9 @@ export const Footer: React.FC<FooterProps> = ({ setActiveTab }) => {
                   WhatsApp: +91 99593 12174
                 </a>
               </div>
-              <div className="flex items-center space-x-2">
-                <Mail className="w-3.5 h-3.5 text-[#D4AF37]" />
-                <span>dispatch@haritravels.in</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <MapPin className="w-3.5 h-3.5 text-[#D4AF37]" />
-                <span>Station Road, Near RTC Central Bus Stand, Tirupati, AP 517501</span>
+              <div className="flex items-start space-x-2.5">
+                <MapPin className="w-3.5 h-3.5 text-[#D4AF37] shrink-0 mt-0.5" />
+                <span className="leading-snug">Station Road, Near RTC Central Bus Stand, Tirupati, AP 517501</span>
               </div>
             </div>
           </div>

@@ -552,10 +552,10 @@ export const DESTINATIONS: Destination[] = [
     distanceFromTirupati: '70 km',
     travelTime: '1 hr 30 mins',
     recommendedDuration: '2 Hours',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Galipgopuram_of_Kanipakam_temple_%28May_2019%29_4.jpg/1280px-Galipgopuram_of_Kanipakam_temple_%28May_2019%29_4.jpg',
+    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Kanipakam_Temple.jpg/1280px-Kanipakam_Temple.jpg',
     gallery: [
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Galipgopuram_of_Kanipakam_temple_%28May_2019%29_4.jpg/1280px-Galipgopuram_of_Kanipakam_temple_%28May_2019%29_4.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Kanipakam_Temple.jpg/1280px-Kanipakam_Temple.jpg',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Galipgopuram_of_Kanipakam_temple_%28May_2019%29_4.jpg/1280px-Galipgopuram_of_Kanipakam_temple_%28May_2019%29_4.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Pond_infront_of_Kanipakam_temple_%28May_2019%29_2.jpg/1280px-Pond_infront_of_Kanipakam_temple_%28May_2019%29_2.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/Galipgopuram_of_Kanipakam_temple_%28May_2019%29_8.jpg/1280px-Galipgopuram_of_Kanipakam_temple_%28May_2019%29_8.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/9/94/Galipgopuram_of_Kanipakam_temple_%28May_2019%29_5.jpg/1280px-Galipgopuram_of_Kanipakam_temple_%28May_2019%29_5.jpg'
